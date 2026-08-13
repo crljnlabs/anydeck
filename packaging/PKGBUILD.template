@@ -1,0 +1,44 @@
+# Maintainer: crljnlabs <maintainer@example.com>
+#
+# Template for the AUR package. Not wired into scripts/build.py yet: it consumes
+# a published GitHub release asset instead of building locally.
+#
+# Before the first publish:
+#   1. replace @VERSION@ (without the leading "v") and @SHA256@ - the checksum
+#      is in the SHA256SUMS.txt that scripts/build.py writes
+#   2. rename the file to PKGBUILD and test it with `makepkg -si`
+
+pkgname=anydeck-bin
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc="Map signals from custom input devices to actions on your PC"
+arch=('x86_64')
+url="https://github.com/crljnlabs/anydeck"
+license=('MIT')
+# The bundle ships its own Python, but pywebview and pystray need the system
+# GTK/WebKit stack at runtime.
+depends=('webkit2gtk-4.1' 'python-gobject' 'libappindicator-gtk3' 'hidapi')
+provides=('anydeck')
+conflicts=('anydeck')
+# PyInstaller bundles must not be stripped.
+options=('!strip')
+source=("anydeck-$pkgver.tar.gz::$url/releases/download/v$pkgver/anydeck-v$pkgver-linux-x86_64.tar.gz"
+        "anydeck.desktop::$url/raw/v$pkgver/packaging/anydeck.desktop"
+        "anydeck.svg::$url/raw/v$pkgver/assets/icon.svg"
+        "anydeck-256.png::$url/raw/v$pkgver/assets/icons/anydeck-256.png")
+sha256sums=('@SHA256@'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+
+package() {
+	install -dm755 "$pkgdir/usr/lib/anydeck"
+	cp -a "$srcdir/anydeck/." "$pkgdir/usr/lib/anydeck/"
+
+	install -dm755 "$pkgdir/usr/bin"
+	ln -s /usr/lib/anydeck/anydeck "$pkgdir/usr/bin/anydeck"
+
+	install -Dm644 "$srcdir/anydeck.desktop" "$pkgdir/usr/share/applications/anydeck.desktop"
+	install -Dm644 "$srcdir/anydeck.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/anydeck.svg"
+	install -Dm644 "$srcdir/anydeck-256.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/anydeck.png"
+}

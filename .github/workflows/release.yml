@@ -1,0 +1,91 @@
+name: Release
+
+# Cross compiling is not possible with PyInstaller: every platform is built on
+# its own runner with the same scripts/build.py that is used locally.
+#
+# Arch Linux is deliberately missing - there is no Arch runner. It is covered by
+# packaging/PKGBUILD.template, which builds from the published Linux tarball.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g. v1.0.0)"
+        required: true
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: Build (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macos-arm64
+          # macos-13 was retired in December 2025; macos-15-intel is the last
+          # x86_64 macOS image and is scheduled to go away in autumn 2027.
+          - os: macos-15-intel
+            label: macos-x86_64
+          - os: windows-latest
+            label: windows-x86_64
+          - os: ubuntu-latest
+            label: linux-x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # pywebview and pystray need the system GTK/WebKit stack on Linux,
+      # pip alone is not enough.
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgirepository1.0-dev libcairo2-dev \
+            gir1.2-webkit2-4.1 gir1.2-ayatanaappindicator3-0.1 \
+            python3-gi python3-gi-cairo
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: echo "value=${{ inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: python scripts/build.py --version ${{ steps.version.outputs.value }} --ci
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anydeck-${{ matrix.label }}
+          path: release/${{ steps.version.outputs.value }}/
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # The checksums of these files are what the Homebrew cask and the AUR
+      # PKGBUILD need (see packaging/).
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

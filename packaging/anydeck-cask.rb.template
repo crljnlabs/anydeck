@@ -1,0 +1,28 @@
+# Template for the Homebrew cask. Not wired into scripts/build.py yet: it
+# consumes a published GitHub release asset.
+#
+# Before the first publish:
+#   1. replace @VERSION@ (without the leading "v") and the two @SHA256@ values -
+#      the checksums are in the SHA256SUMS.txt that scripts/build.py writes
+#   2. rename the file to anydeck.rb and put it in a homebrew tap
+#      (e.g. github.com/crljnlabs/homebrew-tap/Casks/anydeck.rb)
+
+cask "anydeck" do
+  arch arm: "arm64", intel: "x86_64"
+
+  version "@VERSION@"
+  sha256 arm:   "@SHA256_ARM64@",
+         intel: "@SHA256_X86_64@"
+
+  url "https://github.com/crljnlabs/anydeck/releases/download/v#{version}/anydeck-v#{version}-macos-#{arch}.dmg"
+  name "anydeck"
+  desc "Map signals from custom input devices to actions on your PC"
+  homepage "https://github.com/crljnlabs/anydeck"
+
+  app "anydeck.app"
+
+  zap trash: [
+    "~/Library/Application Support/anydeck",
+    "~/Library/Preferences/com.crljnlabs.anydeck.plist",
+  ]
+end

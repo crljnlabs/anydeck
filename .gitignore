@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- anydeck ---------------------------------------------------------------
+
+# Packaged installers written by scripts/build.py. Installers are 40-100 MB per
+# platform and version, so they are distributed as GitHub release assets
+# instead of being tracked here.
+release/
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store

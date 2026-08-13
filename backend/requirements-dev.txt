@@ -1,0 +1,7 @@
+# Build-time only dependencies, not needed to run anydeck.
+# Installed automatically by scripts/build.py.
+
+-r requirements.txt
+
+# Bundles backend + frontend into a standalone application.
+pyinstaller==6.22.0

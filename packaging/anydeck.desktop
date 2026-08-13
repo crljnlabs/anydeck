@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=anydeck
+Comment=Map signals from custom input devices to actions on your PC
+Exec=/usr/bin/anydeck
+Icon=anydeck
+Terminal=false
+Categories=Utility;Settings;
+Keywords=hid;macropad;input;automation;

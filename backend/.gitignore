@@ -1,0 +1,33 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local database and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Packaging and tooling caches
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment overrides
+.env
+.env.local
+
+# macOS
+.DS_Store
