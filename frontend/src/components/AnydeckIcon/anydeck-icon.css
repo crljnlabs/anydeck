@@ -1,0 +1,211 @@
+/* AnydeckIcon — palette and layout.
+ *
+ * The artwork in AnydeckIconArt.jsx carries no colours of its own; every shape
+ * wears a class that reads one of the tokens below. A style set is therefore
+ * just a block of custom properties, which is what makes them settings-ready:
+ * write `--adk-*` on any ancestor and every icon underneath follows.
+ *
+ * Two independent axes:
+ *   surface — `data-surface="dark" | "light" | "auto"`, carried by color-scheme
+ *             so every token resolves through light-dark() in one place
+ *   accent  — `data-accent="orange" | "blue" | "gold" | "mint"`
+ * Anything else (a brand colour from the backend, a user preference) can be set
+ * inline: style={{ '--adk-accent': '#ff0055' }} — the three companion shades
+ * derive from it automatically.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+.adk {
+  color-scheme: dark;
+
+  /* Accent. Only --adk-accent is required; the rest fall back to mixes of it,
+     so a single custom colour is enough to reskin the keycap coherently. */
+  --adk-accent: #f2650e;
+  --adk-accent-light: color-mix(in oklab, var(--adk-accent) 66%, #fff);
+  --adk-accent-side: color-mix(in oklab, var(--adk-accent) 76%, #000);
+  --adk-accent-dark: color-mix(in oklab, var(--adk-accent) 60%, #000);
+  --adk-glow: 0.22;
+
+  /* Tile — the rounded square behind the key. */
+  --adk-tile-1: light-dark(#fdfdfe, #2b3037);
+  --adk-tile-2: light-dark(#f0f2f6, #1c2026);
+  --adk-tile-3: light-dark(#dfe4ec, #12151a);
+
+  /* Housing — the two decks the keycap sits on. */
+  --adk-base-1: light-dark(#c8cfda, #464d57);
+  --adk-base-2: light-dark(#b2bac7, #353b44);
+  --adk-upper-1: light-dark(#dde2ea, #565e6a);
+  --adk-upper-2: light-dark(#c1c9d5, #3f4650);
+  --adk-hull-r: light-dark(#9aa3b1, #252a31);
+  --adk-hull-l: light-dark(#848d9c, #1b1f25);
+  --adk-neck-r: light-dark(#b6bfcb, #333a44);
+  --adk-neck-l: light-dark(#a2abb9, #282e37);
+
+  /* Stem — the cross-shaped switch mount. */
+  --adk-stem-1: light-dark(#e8edf4, #b6bec9);
+  --adk-stem-2: light-dark(#c3cbd7, #98a1ad);
+  --adk-stem-3: light-dark(#f4f7fb, #c2c9d3);
+  --adk-stem-4: light-dark(#b6bfcc, #8c95a1);
+  --adk-stem-top: light-dark(#ffffff, #edf0f4);
+
+  /* Ink and light. */
+  --adk-legend: light-dark(#23272e, #1a1d22);
+  --adk-legend-font: 'Archivo Black', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --adk-legend-weight: 900;
+  --adk-shade: light-dark(#1b2434, #000000);
+  --adk-sheen: #ffffff;
+
+  /* Frame. */
+  --adk-size: 360px;
+  --adk-radius: 22.66%;
+  --adk-drop-color: light-dark(rgb(27 36 52 / 0.24), rgb(0 0 0 / 0.55));
+  --adk-lift-color: light-dark(rgb(27 36 52 / 0.3), rgb(0 0 0 / 0.62));
+}
+
+/* -------------------------------------------------- style set: the surface */
+.adk[data-surface='light'] {
+  color-scheme: light;
+}
+
+.adk[data-surface='auto'] {
+  color-scheme: light dark;
+}
+
+/* light-dark() covers the colours; the handful of non-colour tokens that also
+   want tuning are listed once per light context. */
+.adk[data-surface='light'] {
+  --adk-glow: 0.14;
+}
+
+@media (prefers-color-scheme: light) {
+  .adk[data-surface='auto'] {
+    --adk-glow: 0.14;
+  }
+}
+
+/* --------------------------------------------------- style set: the accent */
+.adk[data-accent='orange'] {
+  --adk-accent: #f2650e;
+  --adk-accent-light: #ff9a3d;
+  --adk-accent-side: #c64a08;
+  --adk-accent-dark: #a33b06;
+}
+
+.adk[data-accent='blue'] {
+  --adk-accent: #2b7bf3;
+  --adk-accent-light: #74adff;
+  --adk-accent-side: #1f5cbe;
+  --adk-accent-dark: #17489a;
+}
+
+.adk[data-accent='gold'] {
+  --adk-accent: #e0b341;
+  --adk-accent-light: #ffd97e;
+  --adk-accent-side: #b3862a;
+  --adk-accent-dark: #8e681d;
+}
+
+.adk[data-accent='mint'] {
+  --adk-accent: #20c39a;
+  --adk-accent-light: #67e8c4;
+  --adk-accent-side: #159578;
+  --adk-accent-dark: #0d7360;
+}
+
+/* --------------------------------------------------------------- the frame */
+.adk {
+  display: block;
+  inline-size: var(--adk-size);
+  block-size: var(--adk-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--adk-radius);
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: 0 26px 64px var(--adk-drop-color);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    box-shadow 320ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    translate 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.adk[data-engaged='true'] {
+  box-shadow: 0 34px 78px var(--adk-lift-color);
+  translate: 0 -2px;
+}
+
+.adk:focus-visible {
+  outline: 3px solid var(--adk-accent);
+  outline-offset: 4px;
+}
+
+/* A decorative icon is inert: `interactive={false}` renders a plain <div> and
+   drops the affordances that would promise a click. */
+.adk[data-interactive='false'] {
+  cursor: default;
+}
+
+.adk-canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/* --------------------------------------------------- token -> paint wiring */
+.adk-s-tile-1 { stop-color: var(--adk-tile-1); }
+.adk-s-tile-2 { stop-color: var(--adk-tile-2); }
+.adk-s-tile-3 { stop-color: var(--adk-tile-3); }
+
+.adk-s-glow-in {
+  stop-color: var(--adk-accent);
+  stop-opacity: var(--adk-glow);
+}
+.adk-s-glow-out {
+  stop-color: var(--adk-accent);
+  stop-opacity: 0;
+}
+
+.adk-s-accent { stop-color: var(--adk-accent); }
+.adk-s-accent-light { stop-color: var(--adk-accent-light); }
+.adk-s-accent-side { stop-color: var(--adk-accent-side); }
+.adk-s-accent-dark { stop-color: var(--adk-accent-dark); }
+
+.adk-s-base-1 { stop-color: var(--adk-base-1); }
+.adk-s-base-2 { stop-color: var(--adk-base-2); }
+.adk-s-upper-1 { stop-color: var(--adk-upper-1); }
+.adk-s-upper-2 { stop-color: var(--adk-upper-2); }
+
+/* The dish keeps its black/white sculpting so the cap reads as concave under
+   any accent — only the two source colours are themeable. */
+.adk-s-dish-1 { stop-color: var(--adk-shade); stop-opacity: 0.2; }
+.adk-s-dish-2 { stop-color: var(--adk-shade); stop-opacity: 0.03; }
+.adk-s-dish-3 { stop-color: var(--adk-sheen); stop-opacity: 0.16; }
+
+.adk-hull-r { fill: var(--adk-hull-r); }
+.adk-hull-l { fill: var(--adk-hull-l); }
+.adk-neck-r { fill: var(--adk-neck-r); }
+.adk-neck-l { fill: var(--adk-neck-l); }
+.adk-stem-1 { fill: var(--adk-stem-1); }
+.adk-stem-2 { fill: var(--adk-stem-2); }
+.adk-stem-3 { fill: var(--adk-stem-3); }
+.adk-stem-4 { fill: var(--adk-stem-4); }
+.adk-stem-top { fill: var(--adk-stem-top); }
+.adk-shade { fill: var(--adk-shade); }
+.adk-sheen { stroke: var(--adk-sheen); }
+
+.adk-legend {
+  fill: var(--adk-legend);
+  font-family: var(--adk-legend-font);
+  font-weight: var(--adk-legend-weight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adk {
+    transition: none;
+  }
+}
