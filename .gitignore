@@ -227,5 +227,8 @@ release/
 # Node
 node_modules/
 
+# Blender writes a backup of the previous save next to every .blend file.
+*.blend1
+
 # macOS
 .DS_Store
