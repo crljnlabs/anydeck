@@ -7,7 +7,11 @@ import './device-element.css'
 
 // The models are in metres, so a 1u key is 0.018 across. The default near
 // plane of 0.1 would clip the whole scene away - hence the tiny near/far.
-const CAMERA = { position: [0.036, 0.044, 0.05], fov: 35, near: 0.001, far: 2 }
+//
+// The elevation is deliberately low. On a key or a knob the moving part is
+// wider than the housing it sits on - a real keycap overhangs its switch - so
+// a steeper angle hides the housing completely behind the cap.
+const CAMERA = { position: [0.038, 0.032, 0.054], fov: 35, near: 0.001, far: 2 }
 
 // Elements stand on y = 0 and are at most ~18 mm tall, so lifting the scene by
 // half that centres it on the camera's default target.
@@ -86,9 +90,11 @@ export function ElementCard({
           <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
             <ambientLight intensity={1.1} />
             <directionalLight position={[0.05, 0.09, 0.06]} intensity={2.6} />
-            {/* Fill from the opposite side so the dark housing keeps a readable
-                silhouette instead of going flat black. */}
-            <directionalLight position={[-0.06, 0.03, -0.05]} intensity={0.9} />
+            {/* The housing is nearly black (#2a2b30 in the models). Without a
+                rim from behind it merges into a dark page background and the
+                element looks like a floating cap with nothing underneath. */}
+            <directionalLight position={[-0.06, 0.02, -0.07]} intensity={2.2} />
+            <directionalLight position={[0.02, -0.04, 0.05]} intensity={0.5} />
             <Suspense fallback={null}>
               <group position={SCENE_OFFSET}>
                 <DeviceElement typeId={type.id} accent={accent} playRef={playRef} />

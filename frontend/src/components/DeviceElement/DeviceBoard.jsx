@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { Vector3 } from 'three'
+import { Box3, Vector3 } from 'three'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from './DeviceElement'
 import { DEFAULT_ACCENT } from './element-types'
@@ -8,7 +8,7 @@ import './device-element.css'
 
 // Steep enough that a back row is not hidden behind the row in front of it,
 // still angled enough to read as three-dimensional.
-const CAMERA = { position: [0.035, 0.17, 0.105], fov: 32, near: 0.001, far: 4 }
+const CAMERA = { position: [0.035, 0.135, 0.125], fov: 32, near: 0.001, far: 4 }
 
 /**
  * Several elements arranged on one shared canvas - a device, rather than a
@@ -27,14 +27,14 @@ const CAMERA = { position: [0.035, 0.17, 0.105], fov: 32, near: 0.001, far: 4 }
  * @param elements [{ key, typeId, position, label }]
  * @param menu     entries for the ring that opens on click, or null for none
  */
-export function ElementBoard({
+export function DeviceBoard({
   elements,
   accent = DEFAULT_ACCENT,
   menu = null,
   onMenuSelect,
   height = 260,
 }) {
-  const [active, setActive] = useState(null)   // { key, anchor }
+  const [active, setActive] = useState(null)   // { key, anchor, radius }
 
   const close = useCallback(() => setActive(null), [])
 
@@ -54,14 +54,17 @@ export function ElementBoard({
 
   return (
     <>
-      <div className="element-board" style={{ blockSize: `${height}px` }}>
+      <div className="device-board" style={{ blockSize: `${height}px` }}>
         <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
           <ambientLight intensity={1.1} />
           <directionalLight position={[0.05, 0.12, 0.08]} intensity={2.6} />
-          <directionalLight position={[-0.08, 0.05, -0.06]} intensity={0.9} />
+          {/* Rim from behind: the housing is nearly black, so without it a
+              key reads as a floating cap with nothing underneath. */}
+          <directionalLight position={[-0.08, 0.03, -0.09]} intensity={2.2} />
+          <directionalLight position={[0.02, -0.05, 0.06]} intensity={0.5} />
           <Suspense fallback={null}>
             {elements.map((element) => (
-              <BoardElement
+              <BoardSlot
                 key={element.key}
                 element={element}
                 accent={accent}
@@ -76,6 +79,7 @@ export function ElementBoard({
       {active && menu?.length ? (
         <RadialMenu
           anchor={active.anchor}
+          radius={active.radius}
           items={menu}
           label={`${activeElement?.label ?? 'Element'} actions`}
           onSelect={(id, item) => onMenuSelect?.(id, item, activeElement)}
@@ -86,7 +90,7 @@ export function ElementBoard({
   )
 }
 
-function BoardElement({ element, accent, selectable, onOpen }) {
+function BoardSlot({ element, accent, selectable, onOpen }) {
   const groupRef = useRef(null)
   const playRef = useRef(null)
   const { camera, gl } = useThree()
@@ -96,7 +100,7 @@ function BoardElement({ element, accent, selectable, onOpen }) {
     // click also hits whatever is behind it.
     event.stopPropagation()
     playRef.current?.()
-    if (selectable) onOpen({ key: element.key, anchor: toScreen(groupRef.current, camera, gl) })
+    if (selectable) onOpen({ key: element.key, ...ringFor(groupRef.current, camera, gl) })
   }
 
   return (
@@ -116,15 +120,58 @@ function BoardElement({ element, accent, selectable, onOpen }) {
   )
 }
 
-/** World position of an object -> viewport coordinates for the DOM menu. */
-function toScreen(object, camera, gl) {
-  const point = new Vector3().setFromMatrixPosition(object.matrixWorld)
-  point.project(camera)
-  const box = gl.domElement.getBoundingClientRect()
+const MIN_RING_RADIUS = 62
+const RING_CLEARANCE = 34   // half an item button plus a little air
+
+/**
+ * Where to put the ring for an element, and how wide to make it.
+ *
+ * Centre: the middle of what the user sees, not the object's origin. An
+ * element's origin sits on its mounting plane - the bottom - because that is
+ * what makes elements line up on a board. Anchoring there puts the ring's
+ * centre at the foot of a key, so the top entry lands on the key while the
+ * bottom ones sit far out in empty space, even though every entry is the same
+ * distance from the anchor.
+ *
+ * Radius: measured from the element rather than fixed, because elements differ
+ * in size by a lot. A ring that clears a 1u key would sit on top of a 2u key
+ * or a fader.
+ *
+ * Both come from the element's bounding box, projected corner by corner - the
+ * centre of a projected box is not the projection of the box's centre once
+ * perspective is involved.
+ */
+function ringFor(object, camera, gl) {
+  const bounds = new Box3().setFromObject(object)
+  const canvas = gl.domElement.getBoundingClientRect()
+  const corner = new Vector3()
+
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+
+  for (let i = 0; i < 8; i++) {
+    corner.set(
+      i & 1 ? bounds.max.x : bounds.min.x,
+      i & 2 ? bounds.max.y : bounds.min.y,
+      i & 4 ? bounds.max.z : bounds.min.z,
+    )
+    corner.project(camera)
+    const x = canvas.left + (corner.x * 0.5 + 0.5) * canvas.width
+    const y = canvas.top + (-corner.y * 0.5 + 0.5) * canvas.height
+    minX = Math.min(minX, x)
+    maxX = Math.max(maxX, x)
+    minY = Math.min(minY, y)
+    maxY = Math.max(maxY, y)
+  }
+
+  const reach = Math.max(maxX - minX, maxY - minY) / 2 + RING_CLEARANCE
+
   return {
-    x: box.left + (point.x * 0.5 + 0.5) * box.width,
-    y: box.top + (-point.y * 0.5 + 0.5) * box.height,
+    anchor: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+    radius: Math.max(MIN_RING_RADIUS, reach),
   }
 }
 
-export default ElementBoard
+export default DeviceBoard

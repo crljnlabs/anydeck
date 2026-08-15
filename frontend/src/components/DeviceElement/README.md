@@ -4,11 +4,11 @@ The 3D input-device elements: keys, knobs, sliders, switches, LEDs. Each one
 loads a glTF model from `public/models/` and plays its own motion on click.
 
 ```jsx
-import { ElementCard, ElementBoard, gridLayout, RotaryEncoder } from './components/DeviceElement'
+import { ElementCard, DeviceBoard, gridLayout, RotaryEncoder } from './components/DeviceElement'
 
 <RotaryEncoder />                                  // named, one per model
 <ElementCard typeId="keycap-standard-1u" />        // same thing, type as data
-<ElementBoard elements={gridLayout(ids)} menu={items} />
+<DeviceBoard elements={gridLayout(ids)} menu={items} />
 ```
 
 ## The three layers
@@ -17,13 +17,13 @@ import { ElementCard, ElementBoard, gridLayout, RotaryEncoder } from './componen
 |---|---|---|
 | `DeviceElement` | the model plus its animation, no canvas | inside a canvas you already have |
 | `ElementCard` | one element on its own small canvas, in a clickable DOM box | palettes, pickers, single elements |
-| `ElementBoard` | many elements sharing **one** canvas | a device: several elements at once |
+| `DeviceBoard` | many elements sharing **one** canvas | a device: several elements at once |
 
 The split between the last two is not cosmetic. A browser keeps only around 16
 live WebGL contexts and silently drops the oldest when that is exceeded, which
 looks like elements rendering blank for no reason. One canvas per element is
 fine for a palette of ten; it is not fine for a palette *and* a device on the
-same screen. `ElementBoard` exists for that case.
+same screen. `DeviceBoard` exists for that case.
 
 ## Adding an element type
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import AnydeckIcon from './components/AnydeckIcon'
 import {
   ELEMENT_TYPE_LIST,
-  ElementBoard,
+  DeviceBoard,
   ElementCard,
   gridLayout,
   preloadElementModels,
@@ -58,7 +58,7 @@ function App() {
           menu. The ring paints over the neighbouring elements instead of being
           clipped by them.
         </p>
-        <ElementBoard
+        <DeviceBoard
           elements={DEVICE}
           menu={ELEMENT_MENU_ITEMS}
           onMenuSelect={(id, item, element) =>

@@ -1,6 +1,6 @@
 export { DeviceElement, default } from './DeviceElement'
 export { ElementCard } from './ElementCard'
-export { ElementBoard } from './ElementBoard'
+export { DeviceBoard } from './DeviceBoard'
 export { gridLayout } from './element-layout'
 export { useElementAnimation } from './useElementAnimation'
 export {

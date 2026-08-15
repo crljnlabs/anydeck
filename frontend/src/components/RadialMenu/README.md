@@ -30,6 +30,18 @@ The cost of that choice is that the ring no longer moves with the page, so the
 caller has to close or re-anchor it on scroll and resize. `ElementCard`
 re-anchors, `ElementBoard` closes.
 
+## Centring it on an element
+
+`anchor` has to be the middle of what the user *sees*. A 3D element's origin
+sits on its mounting plane — its bottom — because that is what makes elements
+line up on a board. Anchoring the ring there looks wrong in a specific way: the
+top entry lands on the element while the bottom ones sit far out in empty
+space, even though every entry is the same distance from the anchor.
+
+`DeviceBoard` handles this by measuring the element's projected bounding box
+and passing both its centre and a `radius` derived from its size, so the ring
+clears a fader as cleanly as it clears a single key.
+
 ## Near a window edge
 
 A full circle around an element close to the edge would put half its entries
