@@ -11,6 +11,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+// The theme setting writes data-theme onto <html>, and this is the only place
+// it has any effect: it pins color-scheme, which every light-dark() in the app
+// resolves through. No attribute means "system", so the OS decides.
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
 }

@@ -1,0 +1,354 @@
+// Layout frame: fixed header, collapsible sidebar, scrolling content.
+//
+// The collapsed width is wide enough for an icon and its focus ring; the
+// expanded width is driven by the longest navigation label, not measured, so a
+// longer translation does not clip.
+
+$sidebar-expanded: 208px;
+$sidebar-collapsed: 60px;
+$header-height: 52px;
+
+.app-shell {
+  --sidebar-width: #{$sidebar-expanded};
+
+  block-size: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &[data-collapsed='true'] {
+    --sidebar-width: #{$sidebar-collapsed};
+  }
+}
+
+.app-header {
+  block-size: $header-height;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-inline: 10px 14px;
+  border-block-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  background: light-dark(#ffffff, #16181d);
+}
+
+.app-brand {
+  inline-size: var(--sidebar-width);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline-start: 6px;
+  overflow: hidden;
+  transition: inline-size 180ms ease;
+
+  // The logo must never be squeezed. It is a flex item next to a nowrap label,
+  // so without this the label wins the space fight and the logo is shrunk to
+  // zero width the moment the sidebar collapses. Matched by position rather
+  // than by the icon's own markup, which is that component's business.
+  > :first-child {
+    flex: none;
+  }
+}
+
+.app-brand-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: light-dark(#111318, #e5e7eb);
+
+  // Fades rather than unmounting, so the sidebar animation has something to
+  // slide against instead of the text vanishing a frame early.
+  transition: opacity 120ms ease;
+
+  .app-shell[data-collapsed='true'] & {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.app-body {
+  flex: 1;
+  min-block-size: 0;
+  display: flex;
+}
+
+.app-sidebar {
+  inline-size: var(--sidebar-width);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px;
+  gap: 2px;
+  border-inline-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  background: light-dark(#fbfbfc, #16181d);
+  transition: inline-size 180ms ease;
+  overflow: hidden;
+
+  ul {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  button {
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 14px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease;
+
+    svg {
+      inline-size: 20px;
+      block-size: 20px;
+      flex: none;
+    }
+
+    span {
+      opacity: 1;
+      transition: opacity 120ms ease;
+    }
+
+    &:hover {
+      background: color-mix(in oklab, currentColor 8%, transparent);
+    }
+
+    &[data-active='true'] {
+      color: light-dark(#111318, #f3f4f6);
+      background: color-mix(in oklab, var(--accent, #f97316) 18%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid color-mix(in oklab, currentColor 40%, transparent);
+      outline-offset: 1px;
+    }
+  }
+
+  .app-shell[data-collapsed='true'] & button span {
+    opacity: 0;
+  }
+}
+
+.app-sidebar-toggle {
+  flex: none;
+  color: color-mix(in oklab, currentColor 65%, transparent);
+}
+
+.app-content {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: auto;
+}
+
+// --- header search ----------------------------------------------------------
+
+.global-search {
+  flex: 1;
+  max-inline-size: 520px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in oklab, currentColor 16%, transparent);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  color: color-mix(in oklab, currentColor 62%, transparent);
+  background: light-dark(#f3f4f6, #1c1f26);
+  cursor: pointer;
+  text-align: start;
+
+  svg {
+    inline-size: 16px;
+    block-size: 16px;
+    flex: none;
+  }
+
+  kbd {
+    margin-inline-start: auto;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 11px;
+    background: color-mix(in oklab, currentColor 12%, transparent);
+  }
+
+  &:hover {
+    border-color: color-mix(in oklab, currentColor 28%, transparent);
+  }
+}
+
+.global-search-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-palette-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: start center;
+  padding-block-start: 12svh;
+}
+
+.search-palette-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(0 0 0 / 0.4);
+  cursor: default;
+}
+
+.search-palette {
+  position: relative;
+  inline-size: min(560px, 92vw);
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  background: light-dark(#ffffff, #1c1f26);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+  overflow: hidden;
+}
+
+.search-palette-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-block-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+
+  svg {
+    inline-size: 18px;
+    block-size: 18px;
+    flex: none;
+    color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+
+  input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    font-size: 15px;
+    color: inherit;
+    background: transparent;
+  }
+}
+
+.search-palette-results {
+  max-block-size: 46svh;
+  overflow: auto;
+  padding: 6px;
+
+  h3 {
+    margin: 8px 8px 4px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, currentColor 50%, transparent);
+  }
+
+  button {
+    inline-size: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 1px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 14px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    text-align: start;
+
+    small {
+      font-size: 12px;
+      color: color-mix(in oklab, currentColor 55%, transparent);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in oklab, currentColor 10%, transparent);
+    }
+  }
+}
+
+.search-palette-empty {
+  margin: 0;
+  padding: 22px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: color-mix(in oklab, currentColor 55%, transparent);
+}
+
+// --- user -------------------------------------------------------------------
+
+.user-badge {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.user-badge-avatar {
+  inline-size: 30px;
+  block-size: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: light-dark(#ffffff, #111318);
+  background: var(--accent, #f97316);
+}
+
+.user-badge-name {
+  display: none;
+  flex-direction: column;
+  line-height: 1.25;
+
+  strong {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  small {
+    font-size: 11px;
+    color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+
+  // The window can get narrow; the avatar alone still identifies the user, and
+  // the full name stays in the tooltip.
+  @media (min-width: 720px) {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .app-brand,
+  .app-brand-name,
+  .app-sidebar button span {
+    transition-duration: 1ms;
+  }
+}
