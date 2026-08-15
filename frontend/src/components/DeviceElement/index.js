@@ -1,7 +1,7 @@
 export { DeviceElement, default } from './DeviceElement'
 export { ElementCard } from './ElementCard'
 export { DeviceBoard } from './DeviceBoard'
-export { gridLayout } from './element-layout'
+export { gridLayout, gridExtent, withPositions, CELL_PITCH } from './element-layout'
 export { useElementAnimation } from './useElementAnimation'
 export {
   ELEMENT_TYPES,

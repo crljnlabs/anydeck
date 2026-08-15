@@ -122,7 +122,7 @@ def main() -> None:
                 "--host", common.BACKEND_HOST,
                 "--port", str(args.port),
             ],
-            common.BACKEND_DIR,
+            common.BACKEND_SRC,
         ))
 
     if not args.backend_only:

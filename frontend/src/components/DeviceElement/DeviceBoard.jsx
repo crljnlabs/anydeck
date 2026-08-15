@@ -4,42 +4,67 @@ import { Box3, Vector3 } from 'three'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from './DeviceElement'
 import { DEFAULT_ACCENT } from './element-types'
+import { CELL_PITCH, gridExtent } from './element-layout'
 import './device-element.css'
 
-// Steep enough that a back row is not hidden behind the row in front of it,
-// still angled enough to read as three-dimensional.
-const CAMERA = { position: [0.035, 0.135, 0.125], fov: 32, near: 0.001, far: 4 }
+// Viewing angle. Low enough to read as a front view of the device rather than
+// a diagram of it, high enough that a back row is not hidden behind the front
+// one and that the tops of keys and knobs stay visible.
+const ELEVATION = (26 * Math.PI) / 180
+
+// Tallest element in the set, roughly - a knob at 21 mm. Used to reserve
+// vertical room so nothing is cropped at the top.
+const ELEMENT_HEIGHT = 0.022
+
+// Elements stand on y = 0, so the scene is dropped by half an element to sit
+// in the middle of the view rather than in its upper half.
+const SCENE_OFFSET = [0, -ELEMENT_HEIGHT / 2, 0]
 
 /**
- * Several elements arranged on one shared canvas - a device, rather than a
- * palette of parts.
+ * A whole device on one shared canvas.
  *
- * The important difference to ElementCard is the single WebGL context. A
- * browser only keeps a limited number alive (around 16) and silently drops the
- * oldest ones when that is exceeded, which shows up as elements that render
- * blank. One canvas per element is fine for a palette; a device with a dozen
- * elements, next to a palette, is not.
+ * Two things separate this from ElementCard. It uses a single WebGL context -
+ * a browser keeps only around sixteen alive and silently drops the oldest,
+ * which shows up as elements rendering blank. And it sizes itself to its
+ * contents: the surface is the device, so it grows with the grid instead of
+ * stretching across whatever width is available.
  *
- * Positions are in metres, in the same real-world scale as the models, so a
- * 1u key really is 18 mm wide and elements can be laid out at the spacing the
- * physical hardware has.
+ * The camera is orthographic on purpose. A device layout is a technical
+ * drawing, not a photograph: with no perspective, a key in the far corner is
+ * drawn at exactly the same size as one in the middle, one grid cell is always
+ * `cellSize` pixels, and the projection used to place the action ring is exact.
  *
- * @param elements [{ key, typeId, position, label }]
- * @param menu     entries for the ring that opens on click, or null for none
+ * @param elements    from gridLayout(): each has cell, span and position
+ * @param interactive false renders the device as a picture - no clicks, no
+ *                    animation, no menu. For anywhere a device is shown rather
+ *                    than edited.
+ * @param menu        entries for the ring, or null for none
  */
 export function DeviceBoard({
   elements,
   accent = DEFAULT_ACCENT,
   menu = null,
   onMenuSelect,
-  height = 260,
+  interactive = true,
+  cellSize = 78,
+  padding = 26,
 }) {
-  const [active, setActive] = useState(null)   // { key, anchor, radius }
-
+  const [active, setActive] = useState(null)
   const close = useCallback(() => setActive(null), [])
 
-  // The ring lives in the DOM, in viewport coordinates, so it has to be
-  // recomputed whenever the canvas moves under it.
+  const { columns, rows } = gridExtent(elements)
+
+  // Pixels per metre. Fixing this rather than fitting a camera to the content
+  // is what keeps a cell the same size whether the device has four elements or
+  // forty - two devices side by side stay comparable.
+  const zoom = cellSize / CELL_PITCH
+
+  const width = columns * cellSize + padding * 2
+  const height =
+    rows * cellSize * Math.sin(ELEVATION) +
+    ELEMENT_HEIGHT * zoom * Math.cos(ELEVATION) +
+    padding * 2
+
   useEffect(() => {
     if (!active) return undefined
     window.addEventListener('resize', close)
@@ -54,24 +79,41 @@ export function DeviceBoard({
 
   return (
     <>
-      <div className="device-board" style={{ blockSize: `${height}px` }}>
-        <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
+      <div
+        className="device-board"
+        data-interactive={interactive}
+        style={{ inlineSize: `${Math.round(width)}px`, blockSize: `${Math.round(height)}px` }}
+      >
+        <Canvas
+          orthographic
+          camera={{
+            zoom,
+            position: [0, Math.sin(ELEVATION), Math.cos(ELEVATION)],
+            near: -10,
+            far: 10,
+          }}
+          dpr={[1, 2]}
+          gl={{ antialias: true }}
+        >
           <ambientLight intensity={1.1} />
           <directionalLight position={[0.05, 0.12, 0.08]} intensity={2.6} />
-          {/* Rim from behind: the housing is nearly black, so without it a
-              key reads as a floating cap with nothing underneath. */}
+          {/* Rim from behind: the housing is nearly black, so without it a key
+              reads as a floating cap with nothing underneath. */}
           <directionalLight position={[-0.08, 0.03, -0.09]} intensity={2.2} />
           <directionalLight position={[0.02, -0.05, 0.06]} intensity={0.5} />
           <Suspense fallback={null}>
-            {elements.map((element) => (
-              <BoardSlot
-                key={element.key}
-                element={element}
-                accent={accent}
-                selectable={Boolean(menu?.length)}
-                onOpen={setActive}
-              />
-            ))}
+            <group position={SCENE_OFFSET}>
+              {elements.map((element) => (
+                <BoardSlot
+                  key={element.key}
+                  element={element}
+                  accent={accent}
+                  interactive={interactive}
+                  selectable={interactive && Boolean(menu?.length)}
+                  onOpen={setActive}
+                />
+              ))}
+            </group>
           </Suspense>
         </Canvas>
       </div>
@@ -90,32 +132,30 @@ export function DeviceBoard({
   )
 }
 
-function BoardSlot({ element, accent, selectable, onOpen }) {
+function BoardSlot({ element, accent, interactive, selectable, onOpen }) {
   const groupRef = useRef(null)
   const playRef = useRef(null)
   const { camera, gl } = useThree()
 
   function handleClick(event) {
-    // Only the frontmost element under the pointer should react, otherwise a
-    // click also hits whatever is behind it.
+    // Only the frontmost element under the pointer reacts, otherwise the click
+    // also hits whatever is behind it.
     event.stopPropagation()
     playRef.current?.()
     if (selectable) onOpen({ key: element.key, ...ringFor(groupRef.current, camera, gl) })
   }
 
+  const handlers = interactive
+    ? {
+        onClick: handleClick,
+        onPointerOver: () => (gl.domElement.style.cursor = 'pointer'),
+        onPointerOut: () => (gl.domElement.style.cursor = 'auto'),
+      }
+    : {}
+
   return (
-    <group
-      ref={groupRef}
-      position={element.position}
-      onClick={handleClick}
-      onPointerOver={() => (gl.domElement.style.cursor = 'pointer')}
-      onPointerOut={() => (gl.domElement.style.cursor = 'auto')}
-    >
-      <DeviceElement
-        typeId={element.typeId}
-        accent={accent}
-        playRef={playRef}
-      />
+    <group ref={groupRef} position={element.position} {...handlers}>
+      <DeviceElement typeId={element.typeId} accent={accent} playRef={playRef} />
     </group>
   )
 }
@@ -134,12 +174,7 @@ const RING_CLEARANCE = 34   // half an item button plus a little air
  * distance from the anchor.
  *
  * Radius: measured from the element rather than fixed, because elements differ
- * in size by a lot. A ring that clears a 1u key would sit on top of a 2u key
- * or a fader.
- *
- * Both come from the element's bounding box, projected corner by corner - the
- * centre of a projected box is not the projection of the box's centre once
- * perspective is involved.
+ * in size by a lot. A ring that clears a 1u key would sit on top of a fader.
  */
 function ringFor(object, camera, gl) {
   const bounds = new Box3().setFromObject(object)

@@ -34,6 +34,8 @@ const MODEL_BASE = `${import.meta.env.BASE_URL}models/`
 export const ELEMENT_TYPES = {
   'keycap-standard-1u': {
     id: 'keycap-standard-1u',
+    span: [1, 1],
+    resizable: false,
     label: 'Key 1u',
     description: 'Standard single-width key.',
     part: 'Cap',
@@ -42,6 +44,8 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-2u': {
     id: 'keycap-standard-2u',
+    span: [2, 1],
+    resizable: false,
     label: 'Key 2u',
     description: 'Double-width key, e.g. a space or enter position.',
     part: 'Cap',
@@ -50,6 +54,8 @@ export const ELEMENT_TYPES = {
 
   'rotary-encoder': {
     id: 'rotary-encoder',
+    span: [1, 1],
+    resizable: false,
     label: 'Rotary encoder',
     description: 'Endless knob, turns in detents.',
     part: 'Knob',
@@ -60,6 +66,8 @@ export const ELEMENT_TYPES = {
 
   potentiometer: {
     id: 'potentiometer',
+    span: [1, 1],
+    resizable: false,
     label: 'Potentiometer',
     description: 'Knob with a limited range and a position indicator.',
     part: 'Knob',
@@ -68,6 +76,8 @@ export const ELEMENT_TYPES = {
 
   'slider-fader': {
     id: 'slider-fader',
+    span: [3, 1],
+    resizable: true,
     label: 'Slider',
     description: 'Linear fader travelling along its track.',
     part: 'Handle',
@@ -76,6 +86,8 @@ export const ELEMENT_TYPES = {
 
   'toggle-switch': {
     id: 'toggle-switch',
+    span: [1, 1],
+    resizable: false,
     label: 'Toggle switch',
     description: 'Latching lever with two positions.',
     part: 'Lever',
@@ -86,6 +98,8 @@ export const ELEMENT_TYPES = {
 
   joystick: {
     id: 'joystick',
+    span: [1, 1],
+    resizable: false,
     label: 'Joystick',
     description: 'Stick tilting around a pivot above the base.',
     part: 'Stick',
@@ -94,6 +108,8 @@ export const ELEMENT_TYPES = {
 
   'led-indicator': {
     id: 'led-indicator',
+    span: [1, 1],
+    resizable: false,
     label: 'LED',
     description: 'Indicator light, switched rather than moved.',
     part: 'Lens',
@@ -105,6 +121,8 @@ export const ELEMENT_TYPES = {
 
   'display-screen': {
     id: 'display-screen',
+    span: [2, 2],
+    resizable: true,
     label: 'Display',
     description: 'Small screen. The surface can take a texture later.',
     part: 'ScreenSurface',
@@ -115,6 +133,8 @@ export const ELEMENT_TYPES = {
 
   'default-placeholder': {
     id: 'default-placeholder',
+    span: [1, 1],
+    resizable: false,
     label: 'Unknown element',
     description: 'Stand-in for an element whose type is not known yet.',
     part: null,

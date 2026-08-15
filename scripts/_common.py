@@ -17,7 +17,8 @@ from pathlib import Path
 # --- project layout ---------------------------------------------------------
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-BACKEND_DIR = PROJECT_DIR / "backend"
+BACKEND_DIR = PROJECT_DIR / "backend"      # venv and requirements live here
+BACKEND_SRC = BACKEND_DIR / "src"          # the importable package root
 FRONTEND_DIR = PROJECT_DIR / "frontend"
 PACKAGING_DIR = PROJECT_DIR / "packaging"
 ASSETS_DIR = PROJECT_DIR / "assets"          # icon.svg, the master artwork
