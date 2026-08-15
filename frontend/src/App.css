@@ -1,50 +1,60 @@
-/* Demo scaffolding only — the icon owns all of its own styling. */
+/* Demo scaffolding only — every component owns its own styling. */
 
 .stage {
   min-block-size: 100svh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 34px;
-  padding: 40px 24px;
+  gap: 44px;
+  padding: 40px 24px 80px;
 }
 
-.stage-hint {
-  font-size: 14px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: color-mix(in oklab, currentColor 55%, transparent);
-}
-
-.stage-sets {
+.stage-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
+  align-items: center;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
 }
 
-.switch {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: color-mix(in oklab, currentColor 8%, transparent);
+.panel {
+  inline-size: min(100%, 880px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 
-  button {
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 16px;
-    border: 0;
-    border-radius: 999px;
-    color: inherit;
-    background: transparent;
-    cursor: pointer;
-    transition: background 160ms ease;
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, currentColor 55%, transparent);
   }
+}
 
-  button[data-on='true'] {
-    background: color-mix(in oklab, currentColor 14%, transparent);
-    color: color-mix(in oklab, currentColor 92%, transparent);
-  }
+.panel-hint {
+  margin: 0 0 14px;
+  max-inline-size: 46ch;
+  text-align: center;
+  font-size: 14px;
+  color: color-mix(in oklab, currentColor 60%, transparent);
+}
+
+.panel-result {
+  margin: 18px 0 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in oklab, currentColor 60%, transparent);
+}
+
+.element-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 6px;
+  inline-size: 100%;
 }

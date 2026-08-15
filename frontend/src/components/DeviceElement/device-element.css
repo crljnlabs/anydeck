@@ -1,0 +1,61 @@
+.element-card {
+  --card-size: 116px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in oklab, currentColor 6%, transparent);
+    border-color: color-mix(in oklab, currentColor 10%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in oklab, currentColor 40%, transparent);
+    outline-offset: 2px;
+  }
+
+  /* While its ring is open the element stays visibly the one being edited. */
+  &[data-open='true'] {
+    background: color-mix(in oklab, currentColor 10%, transparent);
+    border-color: color-mix(in oklab, currentColor 18%, transparent);
+  }
+}
+
+.element-card-stage {
+  inline-size: var(--card-size);
+  block-size: var(--card-size);
+  display: block;
+
+  canvas {
+    /* The canvas answers pointer events itself otherwise, and the click has to
+       reach the surrounding button. */
+    pointer-events: none;
+  }
+}
+
+.element-card-label {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklab, currentColor 65%, transparent);
+}
+
+/* Several elements sharing one WebGL context. See ElementBoard for why that
+   matters once more than a handful are on screen at once. */
+.element-board {
+  inline-size: 100%;
+  border-radius: 16px;
+  background: color-mix(in oklab, currentColor 4%, transparent);
+}
