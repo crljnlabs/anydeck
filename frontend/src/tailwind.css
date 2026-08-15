@@ -1,0 +1,7 @@
+/* Tailwind must stay in a plain .css file.
+ *
+ * Sass resolves `@import` itself and inlines Tailwind's source verbatim, so the
+ * `@tailwind` at-rules inside never reach the Tailwind plugin - the build then
+ * emits them unprocessed. Keeping this one line out of index.scss lets the two
+ * coexist: the plugin handles this file, Sass handles everything else. */
+@import "tailwindcss";

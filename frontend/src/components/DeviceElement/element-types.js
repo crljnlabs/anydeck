@@ -98,7 +98,9 @@ export const ELEMENT_TYPES = {
     description: 'Indicator light, switched rather than moved.',
     part: 'Lens',
     material: 'LED_Emissive',
-    motion: { kind: 'glow', mode: 'toggle', amount: 1, duration: 200 },
+    // Needs to be well above 1: the renderer tone-maps bright values down, so
+    // an intensity of 1 is barely distinguishable from the unlit lens.
+    motion: { kind: 'glow', mode: 'toggle', amount: 6, duration: 200 },
   },
 
   'display-screen': {

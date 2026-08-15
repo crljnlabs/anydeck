@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import AnydeckIcon from './components/AnydeckIcon'
+import AnydeckIcon from '../components/AnydeckIcon'
 import {
   ELEMENT_TYPE_LIST,
   DeviceBoard,
   ElementCard,
   gridLayout,
   preloadElementModels,
-} from './components/DeviceElement'
-import { ELEMENT_MENU_ITEMS } from './components/RadialMenu'
-import './App.css'
+} from '../components/DeviceElement'
+import { ELEMENT_MENU_ITEMS } from '../components/RadialMenu'
+import './styles/App.scss'
 
 preloadElementModels()
 

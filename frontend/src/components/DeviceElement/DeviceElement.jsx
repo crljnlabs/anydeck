@@ -80,6 +80,10 @@ export function DeviceElement({
     if (emissive?.emissive) {
       emissive.emissive.set(accent)
       emissive.emissiveIntensity = 0   // an LED starts off
+      // Tone mapping pulls bright values back towards the rest of the scene,
+      // which is right for lit surfaces and wrong for something that is meant
+      // to read as a light source.
+      emissive.toneMapped = false
     }
   }, [accent, instance])
 
