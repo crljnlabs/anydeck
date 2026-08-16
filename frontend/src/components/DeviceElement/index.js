@@ -1,7 +1,4 @@
 export { DeviceElement, default } from './DeviceElement'
-export { ElementCard } from './ElementCard'
-export { DeviceBoard } from './DeviceBoard'
-export { gridLayout, gridExtent, withPositions, CELL_PITCH } from './element-layout'
 export { useElementAnimation } from './useElementAnimation'
 export {
   ELEMENT_TYPES,
@@ -13,19 +10,7 @@ export {
   modelUrl,
 } from './element-types'
 export {
-  Keycap1u,
-  Keycap2u,
-  RotaryEncoder,
-  Potentiometer,
-  SliderFader,
-  ToggleSwitch,
-  Joystick,
-  LedIndicator,
-  DisplayScreen,
-  UnknownElement,
+  Keycap1u, Keycap2u, RotaryEncoder, Potentiometer, SliderFader,
+  ToggleSwitch, Joystick, LedIndicator, DisplayScreen, UnknownElement,
 } from './element-components'
-export {
-  ELEMENT_COMPONENTS,
-  elementComponent,
-  preloadElementModels,
-} from './element-registry'
+export { ELEMENT_COMPONENTS, elementComponent, preloadElementModels } from './element-registry'

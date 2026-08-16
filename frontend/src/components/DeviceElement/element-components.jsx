@@ -1,4 +1,4 @@
-import { ElementCard } from './ElementCard'
+import { ElementCard } from '../ElementCard'
 
 /**
  * One named component per model file.

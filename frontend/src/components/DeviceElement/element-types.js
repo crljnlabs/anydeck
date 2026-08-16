@@ -114,9 +114,9 @@ export const ELEMENT_TYPES = {
     description: 'Indicator light, switched rather than moved.',
     part: 'Lens',
     material: 'LED_Emissive',
-    // Needs to be well above 1: the renderer tone-maps bright values down, so
-    // an intensity of 1 is barely distinguishable from the unlit lens.
-    motion: { kind: 'glow', mode: 'toggle', amount: 6, duration: 200 },
+    // Above 1, but not so far that the lens clips to white and loses its
+    // colour. The rest of the impression comes from the light it casts.
+    motion: { kind: 'glow', mode: 'toggle', amount: 7, duration: 200 },
   },
 
   'display-screen': {
@@ -145,8 +145,12 @@ export const ELEMENT_TYPES = {
 /** Material carrying the user-facing colour in every model that has one. */
 export const ACCENT_MATERIAL = 'AccentMaterial'
 
-/** Fallback colour until the app has a real accent setting. */
+/** Material of the static housing, present in every model. */
+export const BASE_MATERIAL = 'Base_Housing'
+
+/** Fallbacks for use outside the app, e.g. a component rendered on its own. */
 export const DEFAULT_ACCENT = '#f97316'
+export const DEFAULT_HOUSING = '#3a3f49'
 
 export const ELEMENT_TYPE_LIST = Object.values(ELEMENT_TYPES)
 

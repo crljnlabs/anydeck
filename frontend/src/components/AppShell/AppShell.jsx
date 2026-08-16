@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AnydeckIcon from '../AnydeckIcon'
-import { useTranslation } from '../../contexts/use-settings'
-import { registerSearchProvider, matches } from '../../search/search-registry'
+import { useSettings } from '../../contexts/settings'
+import { registerSearchProvider, matches } from '../../lib/search/search-registry'
 import GlobalSearch from './GlobalSearch'
 import UserBadge from './UserBadge'
 import { HomeIcon, SettingsIcon, SidebarIcon } from './shell-icons'
@@ -24,7 +24,7 @@ const SIDEBAR_KEY = 'anydeck.sidebar.collapsed'
  * that has to know.
  */
 export function AppShell({ page, onNavigate, children }) {
-  const t = useTranslation()
+  const { accentColor, theme, t } = useSettings()
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_KEY) === 'true',
   )
@@ -57,9 +57,16 @@ export function AppShell({ page, onNavigate, children }) {
     <div className="app-shell" data-collapsed={collapsed}>
       <header className="app-header">
         <div className="app-brand">
-          <AnydeckIcon size={30} />
-          {/* The name is part of the brand block, so it disappears together
-              with the sidebar it is aligned to. */}
+          {/* The logo follows the app's own accent and theme - it was the one
+              thing still showing a colour the user had not chosen. */}
+          <AnydeckIcon
+            size={46}
+            accent={accentColor}
+            surface={theme === 'system' ? 'auto' : theme}
+          />
+          {/* Reads as "anydeck": the A is the letter on the keycap in the
+              logo, so the word carries on from the icon. It is part of the
+              brand block, so it disappears together with the sidebar. */}
           <span className="app-brand-name">{t('app.name')}</span>
         </div>
 

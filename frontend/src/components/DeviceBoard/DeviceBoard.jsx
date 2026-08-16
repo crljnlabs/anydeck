@@ -1,16 +1,16 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Box3, Vector3 } from 'three'
+import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
-import { DeviceElement } from './DeviceElement'
-import { DEFAULT_ACCENT } from './element-types'
+import { DeviceElement } from '../DeviceElement'
 import { CELL_PITCH, gridExtent } from './element-layout'
-import './device-element.css'
+import './device-board.scss'
 
-// Viewing angle. Low enough to read as a front view of the device rather than
-// a diagram of it, high enough that a back row is not hidden behind the front
-// one and that the tops of keys and knobs stay visible.
-const ELEVATION = (26 * Math.PI) / 180
+// Viewing angle above the board. Steep enough that every element is readable
+// on its own and no row hides behind the one in front of it - at a shallow
+// angle a dense grid turns into a wall of overlapping caps.
+const ELEVATION = (55 * Math.PI) / 180
 
 // Tallest element in the set, roughly - a knob at 21 mm. Used to reserve
 // vertical room so nothing is cropped at the top.
@@ -42,7 +42,8 @@ const SCENE_OFFSET = [0, -ELEMENT_HEIGHT / 2, 0]
  */
 export function DeviceBoard({
   elements,
-  accent = DEFAULT_ACCENT,
+  accent,
+  housing,
   menu = null,
   onMenuSelect,
   interactive = true,
@@ -51,6 +52,8 @@ export function DeviceBoard({
 }) {
   const [active, setActive] = useState(null)
   const close = useCallback(() => setActive(null), [])
+  // Colours follow the app theme unless a caller overrides them.
+  const { element } = useSettings()
 
   const { columns, rows } = gridExtent(elements)
 
@@ -95,19 +98,20 @@ export function DeviceBoard({
           dpr={[1, 2]}
           gl={{ antialias: true }}
         >
-          <ambientLight intensity={1.1} />
-          <directionalLight position={[0.05, 0.12, 0.08]} intensity={2.6} />
-          {/* Rim from behind: the housing is nearly black, so without it a key
-              reads as a floating cap with nothing underneath. */}
-          <directionalLight position={[-0.08, 0.03, -0.09]} intensity={2.2} />
-          <directionalLight position={[0.02, -0.05, 0.06]} intensity={0.5} />
+          {/* Softer than it was: a key light strong enough to model the shape
+              also drives the accent towards white on curved surfaces. */}
+          <ambientLight intensity={1.5} />
+          <directionalLight position={[0.05, 0.12, 0.08]} intensity={1.5} />
+          <directionalLight position={[-0.08, 0.03, -0.09]} intensity={1.1} />
+          <directionalLight position={[0.02, -0.05, 0.06]} intensity={0.4} />
           <Suspense fallback={null}>
             <group position={SCENE_OFFSET}>
-              {elements.map((element) => (
+              {elements.map((item) => (
                 <BoardSlot
-                  key={element.key}
-                  element={element}
-                  accent={accent}
+                  key={item.key}
+                  element={item}
+                  accent={accent ?? element.accent}
+                  housing={housing ?? element.housing}
                   interactive={interactive}
                   selectable={interactive && Boolean(menu?.length)}
                   onOpen={setActive}
@@ -132,7 +136,7 @@ export function DeviceBoard({
   )
 }
 
-function BoardSlot({ element, accent, interactive, selectable, onOpen }) {
+function BoardSlot({ element, accent, housing, interactive, selectable, onOpen }) {
   const groupRef = useRef(null)
   const playRef = useRef(null)
   const { camera, gl } = useThree()
@@ -155,7 +159,12 @@ function BoardSlot({ element, accent, interactive, selectable, onOpen }) {
 
   return (
     <group ref={groupRef} position={element.position} {...handlers}>
-      <DeviceElement typeId={element.typeId} accent={accent} playRef={playRef} />
+      <DeviceElement
+        typeId={element.typeId}
+        accent={accent}
+        housing={housing}
+        playRef={playRef}
+      />
     </group>
   )
 }

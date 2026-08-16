@@ -1,4 +1,4 @@
-import { elementType } from './element-types'
+import { elementType } from '../DeviceElement/element-types'
 
 /**
  * Grid layout for a device.

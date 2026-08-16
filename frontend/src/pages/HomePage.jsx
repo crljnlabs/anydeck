@@ -1,11 +1,7 @@
-import { useSettings } from '../contexts/use-settings'
-import {
-  ELEMENT_TYPE_LIST,
-  DeviceBoard,
-  ElementCard,
-  gridLayout,
-  preloadElementModels,
-} from '../components/DeviceElement'
+import { useSettings } from '../contexts/settings'
+import { ELEMENT_TYPE_LIST, preloadElementModels } from '../components/DeviceElement'
+import { ElementCard } from '../components/ElementCard'
+import { DeviceBoard, gridLayout } from '../components/DeviceBoard'
 import { ELEMENT_MENU_ITEMS } from '../components/RadialMenu'
 import './styles/HomePage.scss'
 

@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { SettingsContext } from './settings-context'
-import { DEFAULT_APPEARANCE, accentColor, applyAppearance } from '../theme/appearance'
-import { DEFAULT_LANGUAGE, translate } from '../i18n/translations'
+import {
+  DEFAULT_APPEARANCE,
+  accentColor,
+  applyAppearance,
+  elementPalette,
+  resolveTheme,
+} from '../../lib/theme/appearance'
+import { DEFAULT_LANGUAGE, translate } from '../../lib/i18n'
 
 const DEFAULTS = { ...DEFAULT_APPEARANCE, language: DEFAULT_LANGUAGE }
 
@@ -16,6 +22,18 @@ const DEFAULTS = { ...DEFAULT_APPEARANCE, language: DEFAULT_LANGUAGE }
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULTS)
   const [loaded, setLoaded] = useState(false)
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+  )
+
+  // `system` has to follow the OS while the app is open, not only at startup.
+  useEffect(() => {
+    const query = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!query) return undefined
+    const onChange = (event) => setSystemDark(event.matches)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -51,16 +69,21 @@ export function SettingsProvider({ children }) {
     }).catch(() => {})
   }, [])
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const resolvedTheme = resolveTheme(settings.theme)
+    return {
       ...settings,
       loaded,
+      resolvedTheme,
       accentColor: accentColor(settings.accent),
+      // Colours for the 3D elements, which need dimmer values than flat UI.
+      element: elementPalette(resolvedTheme, settings.accent),
       update,
       t: (key) => translate(settings.language, key),
-    }),
-    [settings, loaded, update],
-  )
+    }
+    // systemDark is not read directly - resolveTheme reads the media query -
+    // but it has to invalidate this, otherwise `system` never re-resolves.
+  }, [settings, loaded, systemDark, update])
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
 }

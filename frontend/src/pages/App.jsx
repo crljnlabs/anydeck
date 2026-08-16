@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import AppShell from '../components/AppShell'
-import { SettingsProvider } from '../contexts/SettingsProvider'
+import { SettingsProvider } from '../contexts/settings'
 import HomePage from './HomePage'
 import SettingsPage from './SettingsPage'
 

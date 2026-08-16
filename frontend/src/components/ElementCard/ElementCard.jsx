@@ -1,9 +1,10 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
-import { DeviceElement } from './DeviceElement'
-import { DEFAULT_ACCENT, elementType } from './element-types'
-import './device-element.css'
+import { DeviceElement } from '../DeviceElement'
+import { elementType } from '../DeviceElement/element-types'
+import './element-card.scss'
 
 // The models are in metres, so a 1u key is 0.018 across. The default near
 // plane of 0.1 would clip the whole scene away - hence the tiny near/far.
@@ -36,7 +37,8 @@ const SCENE_OFFSET = [0, -0.008, 0]
  */
 export function ElementCard({
   typeId,
-  accent = DEFAULT_ACCENT,
+  accent,
+  housing,
   label,
   menu = null,
   onMenuSelect,
@@ -45,6 +47,9 @@ export function ElementCard({
   ...rest
 }) {
   const type = elementType(typeId)
+  // Colours come from the app theme unless a caller overrides them, so no page
+  // has to thread them through by hand.
+  const { element } = useSettings()
   const boxRef = useRef(null)
   const playRef = useRef(null)
   const [anchor, setAnchor] = useState(null)
@@ -88,16 +93,21 @@ export function ElementCard({
       >
         <span className="element-card-stage">
           <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
-            <ambientLight intensity={1.1} />
-            <directionalLight position={[0.05, 0.09, 0.06]} intensity={2.6} />
-            {/* The housing is nearly black (#2a2b30 in the models). Without a
-                rim from behind it merges into a dark page background and the
-                element looks like a floating cap with nothing underneath. */}
-            <directionalLight position={[-0.06, 0.02, -0.07]} intensity={2.2} />
-            <directionalLight position={[0.02, -0.04, 0.05]} intensity={0.5} />
+            {/* Softer than it was. A key light strong enough to model the
+                shape also drives the accent towards white on curved surfaces,
+                which is what made it read as garish. */}
+            <ambientLight intensity={1.5} />
+            <directionalLight position={[0.05, 0.09, 0.06]} intensity={1.5} />
+            <directionalLight position={[-0.06, 0.02, -0.07]} intensity={1.1} />
+            <directionalLight position={[0.02, -0.04, 0.05]} intensity={0.4} />
             <Suspense fallback={null}>
               <group position={SCENE_OFFSET}>
-                <DeviceElement typeId={type.id} accent={accent} playRef={playRef} />
+                <DeviceElement
+                  typeId={type.id}
+                  accent={accent ?? element.accent}
+                  housing={housing ?? element.housing}
+                  playRef={playRef}
+                />
               </group>
             </Suspense>
           </Canvas>

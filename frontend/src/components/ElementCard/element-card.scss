@@ -51,17 +51,3 @@
   letter-spacing: 0.02em;
   color: color-mix(in oklab, currentColor 65%, transparent);
 }
-
-/* The surface a device sits on. Sized by DeviceBoard from its grid, so it is a
-   little wider than the elements rather than a band across the whole page -
-   the point of the surface is to show what belongs together. */
-.device-board {
-  border-radius: 16px;
-  background: color-mix(in oklab, currentColor 4%, transparent);
-
-  /* Nothing to click in a display-only board, so nothing should suggest there
-     is. */
-  &[data-interactive='false'] {
-    pointer-events: none;
-  }
-}

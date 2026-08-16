@@ -31,6 +31,47 @@ export function accentColor(accent) {
 }
 
 /**
+ * Colours for the 3D elements, which need different values than flat UI does.
+ *
+ * The housing is the part that has to change with the theme. The models ship it
+ * at #2a2b30, which sits almost exactly on a dark page background - the element
+ * then reads as a floating cap with nothing under it. On a light page the same
+ * near-black looks like a hole punched in the page, so it warms to a cream that
+ * belongs to the surface it sits on.
+ *
+ * The accent is dimmed a little for the 3D use. A colour picked to be legible
+ * as a flat swatch is too loud on a lit, curved surface, where highlights push
+ * it further towards white.
+ */
+export const ELEMENT_HOUSING = {
+  dark: '#3a3f49',
+  light: '#ded8cb',
+}
+
+export function elementPalette(resolvedTheme, accent) {
+  return {
+    accent: dim(accentColor(accent), 0.86),
+    housing: ELEMENT_HOUSING[resolvedTheme] ?? ELEMENT_HOUSING.dark,
+  }
+}
+
+/** Scale a hex colour towards black. */
+function dim(hex, factor) {
+  const value = parseInt(hex.slice(1), 16)
+  const channel = (shift) =>
+    Math.round(Math.min(255, ((value >> shift) & 0xff) * factor))
+      .toString(16)
+      .padStart(2, '0')
+  return `#${channel(16)}${channel(8)}${channel(0)}`
+}
+
+/** Which theme is actually showing, resolving `system` against the OS. */
+export function resolveTheme(theme) {
+  if (theme === 'light' || theme === 'dark') return theme
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+/**
  * Push the appearance onto the document.
  *
  * `data-theme` drives `color-scheme`, which is what every `light-dark()` in the

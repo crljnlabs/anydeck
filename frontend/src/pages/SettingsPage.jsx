@@ -1,7 +1,6 @@
-import { useSettings } from '../contexts/use-settings'
-import { ACCENTS, ACCENT_IDS, THEMES } from '../theme/appearance'
-import { LANGUAGES, LANGUAGE_IDS } from '../i18n/translations'
-import { LANGUAGE_FLAGS } from '../i18n/language-flags'
+import { useSettings } from '../contexts/settings'
+import { ACCENTS, ACCENT_IDS, THEMES } from '../lib/theme/appearance'
+import { LANGUAGES, LANGUAGE_IDS, LANGUAGE_FLAGS } from '../lib/i18n'
 import './styles/SettingsPage.scss'
 
 /**
@@ -58,7 +57,7 @@ export function SettingsPage() {
       <section className="settings-group">
         <h2>{t('settings.language')}</h2>
 
-        <Row label={t('settings.language')} hint={t('settings.languageHint')}>
+        <Row label={t('settings.language')}>
           <div className="language-choice">
             {LANGUAGE_IDS.map((id) => {
               const Flag = LANGUAGE_FLAGS[id]

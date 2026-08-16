@@ -32,11 +32,15 @@ export function HomeIcon(props) {
   )
 }
 
+/**
+ * A gear. The outline is a real eight-tooth profile - points generated on two
+ * radii around the centre - rather than a circle with rays, which is a sun.
+ */
 export function SettingsIcon(props) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="3.2" />
-      <path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" />
+      <path d="M10.18 5.03 L10.46 2.73 L13.54 2.73 L13.82 5.03 L15.64 5.79 L17.47 4.35 L19.65 6.53 L18.21 8.36 L18.97 10.18 L21.27 10.46 L21.27 13.54 L18.97 13.82 L18.21 15.64 L19.65 17.47 L17.47 19.65 L15.64 18.21 L13.82 18.97 L13.54 21.27 L10.46 21.27 L10.18 18.97 L8.36 18.21 L6.53 19.65 L4.35 17.47 L5.79 15.64 L5.03 13.82 L2.73 13.54 L2.73 10.46 L5.03 10.18 L5.79 8.36 L4.35 6.53 L6.53 4.35 L8.36 5.79 Z" />
+      <circle cx="12" cy="12" r="3.1" />
     </Icon>
   )
 }

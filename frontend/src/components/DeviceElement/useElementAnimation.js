@@ -16,7 +16,7 @@ import { useFrame } from '@react-three/fiber'
  *     animation.play()                           // on click
  */
 export function useElementAnimation(motion) {
-  const targets = useRef({ root: null, part: null, material: null })
+  const targets = useRef({ root: null, part: null, material: null, light: null })
   const rest = useRef(null)
   const state = useRef({
     value: 0,      // currently applied offset
@@ -107,7 +107,12 @@ export function useElementAnimation(motion) {
   return useMemo(() => ({ bind, play }), [bind, play])
 }
 
-function apply(motion, value, { root, part, material }, rest) {
+// A real lamp in a scene measured in millimetres needs a tiny number: three
+// works in candela, and illuminance falls off with the square of a distance
+// that is here about a centimetre.
+const LIGHT_SCALE = 0.00009
+
+function apply(motion, value, { root, part, material, light }, rest) {
   if (!rest) return
 
   switch (motion.kind) {
@@ -121,6 +126,9 @@ function apply(motion, value, { root, part, material }, rest) {
 
     case 'glow':
       if (material) material.emissiveIntensity = Math.max(0, value)
+      // The lens is 5 mm across - far too little area to look like a light
+      // source on its own. What sells it is the housing around it lighting up.
+      if (light) light.intensity = Math.max(0, value) * LIGHT_SCALE
       break
 
     case 'pulse':

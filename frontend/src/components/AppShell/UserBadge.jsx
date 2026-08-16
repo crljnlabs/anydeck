@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useTranslation } from '../../contexts/use-settings'
+import { useTranslation } from '../../contexts/settings'
 
 /**
  * Who the app is running for.
@@ -29,17 +29,34 @@ export function UserBadge() {
 
   if (!user) return null
 
+  // Just the initials. The name and the words "operating-system account" were
+  // explaining something the user already knows, in the most valuable strip of
+  // the window.
   return (
-    <div className="user-badge" title={`${t('user.signedInAs')} ${user.username}`}>
-      <span className="user-badge-avatar" aria-hidden="true">
-        {user.initials}
-      </span>
-      <span className="user-badge-name">
-        <strong>{user.display_name}</strong>
-        <small>{t('user.osAccount')}</small>
-      </span>
-    </div>
+    <button
+      type="button"
+      className="user-badge"
+      title={`${t('user.signedInAs')} ${user.display_name} (${user.username})`}
+      aria-label={`${t('user.signedInAs')} ${user.display_name}`}
+    >
+      {initials(user.display_name, user.username)}
+    </button>
   )
+}
+
+/**
+ * Initials from the display name.
+ *
+ * Derived here rather than sent by the backend: it is presentation, it depends
+ * on how much room this badge has, and a different view may well want three
+ * letters or none. Nothing is stored, so there is nothing to keep in sync.
+ */
+function initials(displayName, username) {
+  const source = displayName?.trim() || username || ''
+  const parts = source.replace(/[-_.]/g, ' ').split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 export default UserBadge

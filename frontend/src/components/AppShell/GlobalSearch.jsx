@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from '../../contexts/use-settings'
-import { runSearch } from '../../search/search-registry'
+import { useTranslation } from '../../contexts/settings'
+import { runSearch } from '../../lib/search/search-registry'
 import { SearchIcon } from './shell-icons'
 
 /**

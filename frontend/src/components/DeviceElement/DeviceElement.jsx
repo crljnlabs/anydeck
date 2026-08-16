@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import {
   ACCENT_MATERIAL,
+  BASE_MATERIAL,
   DEFAULT_ACCENT,
+  DEFAULT_HOUSING,
   elementType,
   modelUrl,
 } from './element-types'
@@ -28,12 +30,14 @@ import { useElementAnimation } from './useElementAnimation'
 export function DeviceElement({
   typeId,
   accent = DEFAULT_ACCENT,
+  housing = DEFAULT_HOUSING,
   playRef,
   ...groupProps
 }) {
   const type = elementType(typeId)
   const { scene } = useGLTF(modelUrl(type.id))
   const rootRef = useRef(null)
+  const lightRef = useRef(null)
   const animation = useElementAnimation(type.motion)
 
   // Every instance needs its own copy: three shares geometry and materials
@@ -67,6 +71,7 @@ export function DeviceElement({
       root: rootRef.current,
       part: instance.part,
       material: instance.animated,
+      light: lightRef.current,
     })
   }, [animation, instance])
 
@@ -75,6 +80,11 @@ export function DeviceElement({
   useLayoutEffect(() => {
     const highlight = instance.materials.get(ACCENT_MATERIAL)
     if (highlight) highlight.color.set(accent)
+
+    // The models ship the housing at near-black, which disappears into a dark
+    // page and looks like a hole in a light one. It follows the theme instead.
+    const base = instance.materials.get(BASE_MATERIAL)
+    if (base) base.color.set(housing)
 
     const emissive = instance.animated
     if (emissive?.emissive) {
@@ -85,7 +95,7 @@ export function DeviceElement({
       // to read as a light source.
       emissive.toneMapped = false
     }
-  }, [accent, instance])
+  }, [accent, housing, instance])
 
   useEffect(() => {
     if (!playRef) return undefined
@@ -98,6 +108,16 @@ export function DeviceElement({
   return (
     <group ref={rootRef} {...groupProps}>
       <primitive object={instance.model} />
+      {type.motion.kind === 'glow' ? (
+        <pointLight
+          ref={lightRef}
+          position={[0, 0.008, 0]}
+          intensity={0}
+          distance={0.05}
+          decay={2}
+          color={accent}
+        />
+      ) : null}
     </group>
   )
 }
