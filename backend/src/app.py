@@ -17,6 +17,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from api import autostart as autostart_api
 from api import settings as settings_api
 from api import user as user_api
 from db.schema import migrate
@@ -49,6 +50,7 @@ app = FastAPI(
 # The routing table lives here rather than inside the api package, so one file
 # answers "what does this backend expose".
 api = APIRouter(prefix="/api")
+api.include_router(autostart_api.router)
 api.include_router(settings_api.router)
 api.include_router(user_api.router)
 app.include_router(api)

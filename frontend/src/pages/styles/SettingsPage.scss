@@ -130,3 +130,38 @@
     }
   }
 }
+
+.switch-toggle {
+  inline-size: 42px;
+  block-size: 24px;
+  flex: none;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, currentColor 18%, transparent);
+  cursor: pointer;
+  transition: background 160ms ease;
+
+  span {
+    display: block;
+    inline-size: 18px;
+    block-size: 18px;
+    border-radius: 50%;
+    background: light-dark(#ffffff, #f3f4f6);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+    transition: translate 160ms ease;
+  }
+
+  &[data-on='true'] {
+    background: var(--accent, #f97316);
+
+    span {
+      translate: 18px 0;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in oklab, currentColor 40%, transparent);
+    outline-offset: 2px;
+  }
+}
