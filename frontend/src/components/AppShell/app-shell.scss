@@ -5,7 +5,13 @@
 // longer translation does not clip.
 
 $sidebar-expanded: 208px;
-$sidebar-collapsed: 58px;
+
+// Wide enough for the logo at full size plus air on both sides. The rail is
+// sized to fit its contents - the contents are never trimmed to fit the rail,
+// which is how the logo ended up clipped.
+$logo-size: 56px;
+$rail-padding: 10px;
+$sidebar-collapsed: $logo-size + 2 * $rail-padding;
 $header-height: 84px;
 
 .app-shell {
@@ -40,8 +46,17 @@ $header-height: 84px;
   // Tight, so the logo and the word read as one: the A on the keycap is the
   // first letter of the name, not a picture standing next to it.
   gap: 1px;
-  padding-inline-start: 6px;
+  padding-inline-start: $rail-padding;
   overflow: hidden;
+
+  .app-shell[data-collapsed='true'] & {
+    // Centred in the rail rather than pinned to its left edge, and with the
+    // same room on both sides the icons below get. The gap goes too: a hidden
+    // label still leaves its gap behind, which pushes the logo off centre.
+    padding-inline: $rail-padding;
+    justify-content: center;
+    gap: 0;
+  }
   transition: inline-size 180ms ease;
 
   // The logo must never be squeezed. It is a flex item next to a nowrap label,
@@ -66,6 +81,9 @@ $header-height: 84px;
 
   .app-shell[data-collapsed='true'] & {
     opacity: 0;
+    // Takes no room either - invisible is not the same as gone, and the space
+    // it kept was what pushed the logo to one side.
+    inline-size: 0;
     pointer-events: none;
   }
 }
@@ -81,7 +99,7 @@ $header-height: 84px;
   flex: none;
   display: flex;
   flex-direction: column;
-  padding: 10px 8px;
+  padding: 10px $rail-padding;
   gap: 2px;
   border-inline-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
   background: light-dark(#fbfbfc, #16181d);
@@ -116,8 +134,10 @@ $header-height: 84px;
     transition: background 140ms ease, color 140ms ease;
 
     svg {
-      inline-size: 22px;
-      block-size: 22px;
+      // One size in both states, so an icon never jumps or resizes when the
+      // rail opens and closes.
+      inline-size: 26px;
+      block-size: 26px;
       flex: none;
     }
 
@@ -147,11 +167,17 @@ $header-height: 84px;
     }
   }
 
-  // Collapsing takes the label's space away and nothing else. The icon keeps
-  // its size and its distance from the edge, so it stays exactly where it was
-  // rather than jumping to a new place at a new size.
+  // Collapsed, the icon is all that is left, so it sits in the middle of the
+  // rail. Same size as before - only the label's space goes away.
+  .app-shell[data-collapsed='true'] & button {
+    justify-content: center;
+    padding-inline: 0;
+    gap: 0;
+  }
+
   .app-shell[data-collapsed='true'] & button span {
     opacity: 0;
+    inline-size: 0;
   }
 }
 

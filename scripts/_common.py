@@ -221,6 +221,19 @@ def tool_available(name: str) -> bool:
     return shutil.which(name) is not None
 
 
+def keep_out_of_spotlight(directory: Path) -> None:
+    """Stop Spotlight indexing a directory.
+
+    Build output contains a second copy of the application, and Spotlight
+    indexes it like any other: searching for the app then offers two results,
+    one of which is a build artefact that may be half-written or from an older
+    version. This marker file is the documented way to tell Spotlight to skip a
+    tree entirely.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / ".metadata_never_index").touch()
+
+
 def clean_directory(path: Path) -> Path:
     if path.exists():
         shutil.rmtree(path)

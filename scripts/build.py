@@ -53,6 +53,9 @@ def build_frontend() -> None:
 
 
 def run_pyinstaller(python: Path) -> Path:
+    # Before anything is written: a second copy of the app in here would
+    # otherwise turn up in Spotlight alongside the installed one.
+    common.keep_out_of_spotlight(common.BUILD_DIR)
     common.info("Bundling with PyInstaller")
     common.clean_directory(common.DIST_DIR)
     common.run([
