@@ -1,13 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   // Relative asset paths so the production build also works when the backend
   // serves it from the bundled web/ directory.
   base: './',
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   server: {
     port: 5173,
     // In development the frontend runs on its own port. Proxying /api to the
