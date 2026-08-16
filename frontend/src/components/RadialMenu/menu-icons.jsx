@@ -44,6 +44,23 @@ export function PencilIcon(props) {
   )
 }
 
+/**
+ * Change how many cells the element covers.
+ *
+ * Only offered for elements whose real hardware comes in different sizes - a
+ * display or a strip. A wider key is a different part, not a stretched one.
+ */
+export function ResizeIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 10V4h6" />
+      <path d="M20 14v6h-6" />
+      <path d="M4 4l6 6" />
+      <path d="M20 20l-6-6" />
+    </Icon>
+  )
+}
+
 /** Remove the element from the device. */
 export function TrashIcon(props) {
   return (

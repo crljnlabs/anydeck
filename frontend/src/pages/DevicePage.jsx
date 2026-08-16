@@ -47,9 +47,11 @@ export function DevicePage({ id, navigate }) {
 
   const elements = useMemo(() => gridLayout(placements), [placements])
 
-  // The board hands back every element's cell, not just the moved one: moving
+  // The board hands back every element's cell, not just the edited one: editing
   // an element pushes its neighbours aside, so a move is a change to the whole
-  // arrangement rather than to one entry in it.
+  // arrangement rather than to one entry in it. A `span` comes along only for
+  // an element that was resized - everything else keeps taking its footprint
+  // from its type.
   const rearrange = useCallback((next) => {
     const byKey = new Map(next.map((item) => [item.key, item]))
     setPlacements((current) =>
@@ -72,8 +74,10 @@ export function DevicePage({ id, navigate }) {
   // the panel has to read the position from the one and the rest from the
   // other - otherwise it keeps reporting where an element used to be.
   const found = device.elements.find((item) => item.id === selectedId)
-  const placed = placements.find((item) => item.key === selectedId)
-  const selected = found ? { ...found, cell: placed?.cell ?? found.cell, rotation: placed?.rotation ?? found.rotation } : null
+  const laid = elements.find((item) => item.key === selectedId)
+  const selected = found
+    ? { ...found, cell: laid?.cell ?? found.cell, rotation: laid?.rotation ?? found.rotation, span: laid?.span }
+    : null
 
   return (
     <div className="device-page">
@@ -311,6 +315,9 @@ function AttributesPanel({ element, device, profileId, onSelect }) {
         />
         <Row label="Position" value={<code>{element.cell.join(', ')}</code>} />
         <Row label="Rotation" value={<code>{element.rotation}°</code>} />
+        {element.span ? (
+          <Row label="Footprint" value={<code>{element.span.join(' × ')} cells</code>} />
+        ) : null}
         {element.resolution ? (
           <Row
             label="Resolution"

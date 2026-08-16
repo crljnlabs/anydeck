@@ -58,6 +58,30 @@
   rx: 3;
 }
 
+/* --- resizing -------------------------------------------------------------- */
+
+/* Above the canvas, unlike the grid: the corner has to be grabbed. Everything
+   except that corner lets the pointer through, so a press anywhere else ends
+   the resize rather than being swallowed by an invisible sheet. */
+.board-resize {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.board-resize-outline {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  rx: 3;
+}
+
+.board-resize-handle {
+  pointer-events: auto;
+  cursor: nwse-resize;
+}
+
 /* --- shortcuts, while an element is being carried -------------------------- */
 
 .drag-hints {

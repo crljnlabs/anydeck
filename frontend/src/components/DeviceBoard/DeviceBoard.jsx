@@ -2,22 +2,26 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Canvas, useThree } from '@react-three/fiber'
 import { Box3, Vector3 } from 'three'
 import { useSettings } from '../../contexts/settings'
-import { RadialMenu } from '../RadialMenu'
+import { RadialMenu, ResizeIcon } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
 import { ElementBoundary } from '../DeviceElement/ElementBoundary'
 import { ElementLights } from '../DeviceElement/ElementLights'
+import { elementType } from '../DeviceElement/element-types'
 import { SCENE_OFFSET, viewCamera } from '../DeviceElement/element-view'
 import {
   CELL_PITCH,
   gridExtent,
   normaliseCells,
   placeWithinGrid,
+  spanFor,
   withPositions,
 } from './element-layout'
 import { boardFrame } from './board-frame'
 import { BoardGrid } from './BoardGrid'
 import { DragHints } from './DragHints'
+import { ResizeOverlay } from './ResizeOverlay'
 import { useBoardDrag } from './useBoardDrag'
+import { useBoardResize } from './useBoardResize'
 import './device-board.scss'
 
 /** Shown while an element is in hand. Nothing else is bound during a drag. */
@@ -26,8 +30,34 @@ const DRAG_HINTS = [
   { key: 'Esc', label: 'Cancel' },
 ]
 
+/** Shown while a footprint is being changed. */
+const RESIZE_HINTS = [{ key: 'Esc', label: 'Cancel' }]
+
+/**
+ * Resizing is the board's own doing, not the caller's, the same way moving is.
+ * The entry appears on the ring for elements that can take it and is handled
+ * here rather than being passed out and handed back.
+ */
+const RESIZE_ITEM = {
+  id: 'board:resize',
+  label: 'Resize',
+  icon: <ResizeIcon />,
+}
+
 /** How far an element lifts off the surface while it is being carried. */
 const CARRY_LIFT = 0.006
+
+/**
+ * Spare cells added to the board while a footprint is being changed.
+ *
+ * A board is exactly as large as its contents, so an element at the edge has
+ * nowhere to grow into: the first drag of its corner would be clamped after a
+ * cell and the element would appear stuck. This is one key's worth of room to
+ * work in, and it disappears again when the resize is over. It is added when
+ * the mode is entered rather than mid-gesture, so the board is never resized
+ * out from under a moving pointer.
+ */
+const RESIZE_HEADROOM = 4
 
 
 /**
@@ -67,45 +97,89 @@ export function DeviceBoard({
 }) {
   const [active, setActive] = useState(null)
   const close = useCallback(() => setActive(null), [])
+  // Resizing works from pointer positions on the page, so it needs to know
+  // where the board itself is.
+  const boardRef = useRef(null)
   // Colours follow the app theme unless a caller overrides them.
   const { element } = useSettings()
 
-  // Both are handed to an effect that listens on the window, so a fresh object
+  // Which element the ring was asked to resize. Held here rather than inside
+  // the gesture, because the board has to make room for it before the gesture
+  // can start.
+  const [resizingKey, setResizingKey] = useState(null)
+
+  // Both are handed to effects that listen on the window, so a fresh object
   // every render would mean tearing those listeners down and putting them back
   // on every render.
-  const extent = useMemo(() => gridExtent(elements), [elements])
+  const content = useMemo(() => gridExtent(elements), [elements])
+  const extent = useMemo(
+    () =>
+      resizingKey
+        ? {
+            columns: content.columns + RESIZE_HEADROOM,
+            rows: content.rows + RESIZE_HEADROOM,
+          }
+        : content,
+    [content, resizingKey],
+  )
   const frame = useMemo(
     () => boardFrame({ ...extent, cellSize, padding }),
     [extent, cellSize, padding],
   )
 
   // Committing runs the same placement the preview ran, so what is kept is
-  // exactly what was on screen when the element was let go.
+  // exactly what was on screen when the element was let go. `baseSpan` is only
+  // there after a resize, and only the element it belongs to carries one - a
+  // footprint that came from the element's type stays with the type.
   const commit = useCallback(
-    (dropped) => {
-      const settled = normaliseCells(placeWithinGrid(elements, dropped, extent))
+    (settling) => {
+      setResizingKey(null)
+      const settled = normaliseCells(placeWithinGrid(elements, settling, extent))
       onLayoutChange(
-        settled.map(({ key, cell, rotation }) => ({ key, cell, rotation })),
+        settled.map(({ key, cell, rotation }) =>
+          key === settling.key && settling.baseSpan
+            ? { key, cell, rotation, span: settling.baseSpan }
+            : { key, cell, rotation },
+        ),
       )
     },
     [elements, extent, onLayoutChange],
   )
 
+  const editable = interactive && Boolean(onLayoutChange)
+  const stopResize = useCallback(() => setResizingKey(null), [])
+
   const { drag, begin, takeClick } = useBoardDrag({
     elements,
     frame,
-    extent,
-    onDrop: interactive && onLayoutChange ? commit : null,
+    // Moving stays inside the board as it is - the headroom is room to grow
+    // into, not somewhere to put things.
+    extent: content,
+    onDrop: editable ? commit : null,
   })
 
-  // While an element is in hand the board shows where things would end up if it
-  // were let go here, neighbours included. Worked out from the committed layout
-  // every time rather than from the last preview, so moving back to where you
-  // started puts everything back where it was instead of leaving a trail.
+  const { footprint: resize, grab } = useBoardResize({
+    target: elements.find((item) => item.key === resizingKey) ?? null,
+    frame,
+    extent,
+    boardRef,
+    onCommit: commit,
+    onCancel: stopResize,
+  })
+
+  // The two gestures ask different questions - where does it go, how large is
+  // it - but they answer in the same shape, so everything downstream of here
+  // only has to know that something is being edited.
+  const editing = drag ?? resize
+
+  // While an element is being edited the board shows where things would end up
+  // if it were let go now, neighbours included. Worked out from the committed
+  // layout every time rather than from the last preview, so going back to where
+  // you started puts everything back where it was instead of leaving a trail.
   const shown = useMemo(() => {
-    if (!drag) return elements
-    return withPositions(placeWithinGrid(elements, drag, extent), CELL_PITCH, extent)
-  }, [drag, elements, extent])
+    if (!editing) return elements
+    return withPositions(placeWithinGrid(elements, editing, extent), CELL_PITCH, extent)
+  }, [editing, elements, extent])
 
   useEffect(() => {
     if (!active) return undefined
@@ -117,17 +191,32 @@ export function DeviceBoard({
     }
   }, [active, close])
 
-  // An open ring belongs to an element at a position, and a drag moves them
+  // An open ring belongs to an element at a position, and editing moves them
   // all, so it cannot stay open across one.
   useEffect(() => {
-    if (drag) setActive(null)
-  }, [drag])
+    if (editing) setActive(null)
+  }, [editing])
+
+  // A drag replaces whatever was being resized: the element is being moved
+  // instead, and two answers about the same element cannot both be pending.
+  useEffect(() => {
+    if (drag) stopResize()
+  }, [drag, stopResize])
 
   const activeElement = elements.find((element) => element.key === active?.key)
+
+  // The ring's own entries, plus resizing where the hardware actually varies in
+  // size. Kept out of the caller's list so that every board that can be edited
+  // offers it, without each one remembering to.
+  const ringItems = useMemo(() => {
+    if (!menu?.length) return menu
+    return editable && activeElement?.resizable ? [...menu, RESIZE_ITEM] : menu
+  }, [menu, editable, activeElement])
 
   return (
     <>
       <div
+        ref={boardRef}
         className="device-board"
         data-interactive={interactive}
         data-dragging={Boolean(drag)}
@@ -136,12 +225,12 @@ export function DeviceBoard({
           blockSize: `${Math.round(frame.height)}px`,
         }}
       >
-        {drag ? (
+        {editing ? (
           <BoardGrid
             frame={frame}
             columns={extent.columns}
             rows={extent.rows}
-            focus={drag}
+            focus={editing}
             accent={accent ?? element.accent}
           />
         ) : null}
@@ -173,17 +262,29 @@ export function DeviceBoard({
             </group>
           </Suspense>
         </Canvas>
+
+        {resize ? (
+          <ResizeOverlay
+            frame={frame}
+            footprint={resize}
+            accent={accent ?? element.accent}
+            onGrab={grab}
+          />
+        ) : null}
       </div>
 
-      {drag ? <DragHints hints={DRAG_HINTS} /> : null}
+      {editing ? <DragHints hints={drag ? DRAG_HINTS : RESIZE_HINTS} /> : null}
 
-      {active && menu?.length ? (
+      {active && ringItems?.length ? (
         <RadialMenu
           anchor={active.anchor}
           radius={active.radius}
-          items={menu}
+          items={ringItems}
           label={`${activeElement?.label ?? 'Element'} actions`}
-          onSelect={(id, item) => onMenuSelect?.(id, item, activeElement)}
+          onSelect={(id, item) => {
+            if (id === RESIZE_ITEM.id) setResizingKey(activeElement.key)
+            else onMenuSelect?.(id, item, activeElement)
+          }}
           onClose={close}
         />
       ) : null}
@@ -241,11 +342,21 @@ function BoardSlot({
   // clockwise turn on screen is a negative rotation here.
   const rotation = [0, (-(element.rotation ?? 0) * Math.PI) / 180, 0]
 
+  // An element covering more cells than its type says has been resized, and the
+  // model has to follow - a display given twice the room is twice the panel,
+  // not the same panel with empty board around it. Worked out from the upright
+  // footprint, because the scale is applied in the same local space the
+  // rotation above turns.
+  const natural = elementType(element.typeId).span ?? [1, 1]
+  const upright = spanFor(element.span, element.rotation)
+  const scale = [upright[0] / natural[0], 1, upright[1] / natural[1]]
+
   return (
     <group
       ref={groupRef}
       position={[x, carried ? y + CARRY_LIFT : y, z]}
       rotation={rotation}
+      scale={scale}
       {...handlers}
     >
       <ElementBoundary>
