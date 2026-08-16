@@ -4,6 +4,7 @@ import { DeviceBoard, gridLayout } from '../components/DeviceBoard'
 import { ELEMENT_TYPES, ELEMENT_TYPE_LIST, elementType } from '../components/DeviceElement'
 import { BoltIcon, PencilIcon, TrashIcon } from '../components/RadialMenu'
 import { MOCK_ACTIONS, MOCK_INTEGRATIONS, mockDevice } from '../lib/mock/devices'
+import { ProfileAdd, ProfileNumber } from './profile-marks'
 import './styles/DevicePage.scss'
 
 /** The ring on an element. "Attributes" is the way into the panel on the right. */
@@ -26,6 +27,10 @@ export function DevicePage({ id, navigate }) {
   const device = mockDevice(id)
   const [profileId, setProfileId] = useState(device?.activeProfileId ?? null)
   const [selectedId, setSelectedId] = useState(device?.elements[0]?.id ?? null)
+  // The panel shows whichever of the two was touched last. Selecting a profile
+  // and selecting an element are the same gesture from the user's side, so they
+  // share one place to land.
+  const [showing, setShowing] = useState('element')
 
   const elements = useMemo(
     () =>
@@ -72,7 +77,10 @@ export function DevicePage({ id, navigate }) {
         <ProfileBar
           profiles={device.profiles}
           activeId={profileId}
-          onSelect={setProfileId}
+          onSelect={(id) => {
+            setProfileId(id)
+            setShowing('profile')
+          }}
         />
 
         <DeviceBoard
@@ -80,18 +88,31 @@ export function DevicePage({ id, navigate }) {
           accent={palette.accent}
           housing={palette.housing}
           menu={ELEMENT_MENU}
-          onSelect={(chosen) => setSelectedId(chosen.key)}
-          onMenuSelect={(_action, _item, chosen) => setSelectedId(chosen?.key ?? null)}
+          onSelect={(chosen) => {
+            setSelectedId(chosen.key)
+            setShowing('element')
+          }}
+          onMenuSelect={(_action, _item, chosen) => {
+            setSelectedId(chosen?.key ?? null)
+            setShowing('element')
+          }}
           cellSize={22}
         />
       </div>
 
-      <AttributesPanel
-        element={selected}
-        device={device}
-        profileId={profileId}
-        onSelect={setSelectedId}
-      />
+      {showing === 'profile' ? (
+        <ProfilePanel
+          profile={device.profiles.find((item) => item.id === profileId)}
+          device={device}
+        />
+      ) : (
+        <AttributesPanel
+          element={selected}
+          device={device}
+          profileId={profileId}
+          onSelect={setSelectedId}
+        />
+      )}
     </div>
   )
 }
@@ -119,16 +140,102 @@ function ProfileBar({ profiles, activeId, onSelect }) {
           }
           onClick={() => onSelect(profile.id)}
         >
-          <span className="profile-number">{index + 1}</span>
+          <ProfileNumber value={index + 1} />
           <span className="profile-name">{profile.name}</span>
           {profile.appliesTo ? <span className="profile-auto">auto</span> : null}
         </button>
       ))}
 
-      <button type="button" className="profile-chip profile-add" title="New profile, copied from this one">
-        +
+      <button
+        type="button"
+        className="profile-chip profile-add"
+        title="New profile, copied from this one"
+      >
+        <ProfileAdd />
       </button>
     </div>
+  )
+}
+
+/**
+ * A profile's own attributes, in the same panel an element uses.
+ *
+ * Same shape on purpose: whatever you last touched is described on the right,
+ * so there is one place to look rather than two.
+ */
+function ProfilePanel({ profile, device }) {
+  if (!profile) {
+    return (
+      <aside className="attributes-panel">
+        <p className="attributes-empty">No profile selected.</p>
+      </aside>
+    )
+  }
+
+  const isDefault = profile.id === device.activeProfileId
+  const hookCount = device.elements.reduce(
+    (total, element) =>
+      total + (element.hooks ?? []).filter((hook) => hook.profileId === profile.id).length,
+    0,
+  )
+
+  return (
+    <aside className="attributes-panel">
+      <div className="attributes-head">
+        <span className="attributes-title">Profile</span>
+      </div>
+
+      <Group title="Design">
+        <Row label="Name" value={<input key={profile.id} defaultValue={profile.name} />} />
+        <Row
+          label="Default"
+          value={
+            <label className="attributes-check">
+              <input type="checkbox" defaultChecked={isDefault} />
+              <span>Use when nothing else applies</span>
+            </label>
+          }
+        />
+      </Group>
+
+      <Group title="Activation">
+        <Row
+          label="When"
+          value={
+            <select key={profile.id} defaultValue={profile.appliesTo ? 'app' : 'manual'}>
+              <option value="manual">Chosen by hand</option>
+              <option value="app">An application is in front</option>
+            </select>
+          }
+        />
+        <Row
+          label="Application"
+          value={
+            <input
+              key={profile.id}
+              defaultValue={profile.appliesTo ?? ''}
+              placeholder="e.g. OBS Studio"
+            />
+          }
+        />
+      </Group>
+
+      <div className="attributes-actions">
+        <div className="attributes-actions-head">
+          <h3>Contents</h3>
+          <button type="button">Duplicate</button>
+        </div>
+        <p className="attributes-note">
+          {hookCount} {hookCount === 1 ? 'action' : 'actions'} across{' '}
+          {device.elements.length} elements.
+        </p>
+      </div>
+
+      <p className="attributes-description">
+        A profile decides what every element on this device does. Elements and
+        their positions are shared; only the actions differ.
+      </p>
+    </aside>
   )
 }
 

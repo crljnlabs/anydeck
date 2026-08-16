@@ -17,6 +17,15 @@ const NAV = [
 const SIDEBAR_KEY = 'anydeck.sidebar.collapsed'
 
 /**
+ * Which navigation entry a screen belongs to.
+ *
+ * A device page is still Devices as far as the sidebar is concerned - the entry
+ * stays lit, and clicking it again goes back up to the list, which is where
+ * someone reaching for it wants to end up.
+ */
+const SECTION = { device: 'devices' }
+
+/**
  * The frame every screen sits in: header on top, collapsible navigation on the
  * left, the active page filling the rest.
  *
@@ -84,7 +93,7 @@ export function AppShell({ route, onNavigate, children }) {
               <li key={id}>
                 <button
                   type="button"
-                  data-active={route.name === id}
+                  data-active={(SECTION[route.name] ?? route.name) === id}
                   title={collapsed ? t(labelKey) : undefined}
                   onClick={() => onNavigate(id)}
                 >

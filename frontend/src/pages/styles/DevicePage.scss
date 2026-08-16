@@ -210,27 +210,25 @@
   }
 }
 
-.profile-number {
+// Drawn, not typed - see profile-marks.jsx for why.
+.profile-mark {
   inline-size: 20px;
   block-size: 20px;
   flex: none;
-  display: grid;
-  place-items: center;
-  // Without this the digit sits low: it inherits the row's line height, which
-  // is set for text, not for a circle.
-  line-height: 1;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 700;
-  // Legible on both states rather than only on the selected one.
-  color: light-dark(#ffffff, #14161b);
-  background: color-mix(in oklab, currentColor 55%, transparent);
+  color: color-mix(in oklab, currentColor 55%, transparent);
 
-  .profile-chip[data-on='true'] & {
-    color: light-dark(#ffffff, #14161b);
-    background: var(--accent, #f97316);
-  }
+  // The ink inside the filled circle: it has to read against the circle, not
+  // against the chip behind it.
+  --profile-mark-ink: #ffffff;
+
+  .profile-chip[data-on='true'] & { color: var(--accent, #f97316); }
 }
+
+:root[data-theme='dark'] .profile-mark,
+:root:not([data-theme='light']) .profile-mark {
+  --profile-mark-ink: #14161b;
+}
+
 
 .profile-auto {
   padding: 1px 6px;
@@ -248,13 +246,36 @@
   // Same height as the chips beside it: it is one of them, not a smaller
   // afterthought.
   min-block-size: 34px;
-  padding-inline: 15px;
-  font-size: 16px;
-  line-height: 1;
+  padding-inline: 11px;
   color: color-mix(in oklab, currentColor 70%, transparent);
+
+  .profile-mark { color: inherit; }
 
   &:hover {
     border-color: color-mix(in oklab, var(--accent, #f97316) 70%, transparent);
     color: inherit;
+  }
+}
+
+.attributes-title {
+  display: block;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.attributes-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: color-mix(in oklab, currentColor 75%, transparent);
+  cursor: pointer;
+
+  input {
+    inline-size: auto;
+    flex: none;
+    margin: 0;
+    accent-color: var(--accent, #f97316);
   }
 }

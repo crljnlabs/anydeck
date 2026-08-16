@@ -1,3 +1,13 @@
+// Every width in this app is written as if padding and border sit inside it -
+// which is only true with border-box. Tailwind's reset used to provide this;
+// when Tailwind was dropped the reset went with it, and every sized box has
+// been quietly wider than its declared width since.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
