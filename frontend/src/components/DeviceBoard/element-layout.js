@@ -51,33 +51,64 @@ export function gridLayout(entries, { columns = 16, pitch = CELL_PITCH } = {}) {
     typeof entry === 'string' ? { typeId: entry } : entry,
   )
 
-  // Occupancy map, so a wide element never lands on top of a narrow one that
-  // was already placed in the row above.
-  const taken = new Set()
-  const key = (col, row) => `${col},${row}`
+  // Shelf packing: elements are placed in the order they were given, left to
+  // right, and a new row starts below everything already placed. Deliberately
+  // no back-filling of gaps - an earlier version searched for the first free
+  // cell, which wedged a 1x1 LED into whatever hole two large elements happened
+  // to leave and produced a layout nobody asked for.
+  let cursor = 0
+  let shelfTop = 0
+  let shelfHeight = 0
+  let shelfStart = 0
 
-  const placed = items.map((item, index) => {
+  const placed = []
+
+  const centreShelf = () => {
+    // Small elements sit in the middle of their row rather than clinging to its
+    // top edge, which is where an LED next to a key would otherwise end up.
+    for (let i = shelfStart; i < placed.length; i++) {
+      const item = placed[i]
+      item.cell[1] += Math.floor((shelfHeight - item.span[1]) / 2)
+    }
+  }
+
+  items.forEach((item, index) => {
     const type = elementType(item.typeId)
     const [width, height] = item.span ?? type.span ?? [1, 1]
-    const at = item.cell ?? findFreeCell(taken, key, columns, width, height)
 
-    for (let dx = 0; dx < width; dx++) {
-      for (let dy = 0; dy < height; dy++) {
-        taken.add(key(at[0] + dx, at[1] + dy))
-      }
+    if (item.cell) {
+      // Pinned by the caller: taken as given, and it does not move the cursor.
+      placed.push(entry(item, index, type, [width, height], [...item.cell]))
+      return
     }
 
-    return {
-      key: item.key ?? `${item.typeId}-${index}`,
-      typeId: item.typeId,
-      label: item.label ?? type.label,
-      cell: at,
-      span: [width, height],
-      resizable: item.resizable ?? type.resizable ?? false,
+    if (cursor + width > columns && cursor > 0) {
+      centreShelf()
+      shelfTop += shelfHeight
+      cursor = 0
+      shelfHeight = 0
+      shelfStart = placed.length
     }
+
+    placed.push(entry(item, index, type, [width, height], [cursor, shelfTop]))
+    cursor += width
+    shelfHeight = Math.max(shelfHeight, height)
   })
 
+  centreShelf()
+
   return withPositions(placed, pitch)
+}
+
+function entry(item, index, type, span, cell) {
+  return {
+    key: item.key ?? `${item.typeId}-${index}`,
+    typeId: item.typeId,
+    label: item.label ?? type.label,
+    cell,
+    span,
+    resizable: item.resizable ?? type.resizable ?? false,
+  }
 }
 
 /**
@@ -117,19 +148,4 @@ export function gridExtent(elements) {
     elements.columns ?? Math.max(...elements.map((e) => e.cell[0] + e.span[0]), 1)
   const rows = elements.rows ?? Math.max(...elements.map((e) => e.cell[1] + e.span[1]), 1)
   return { columns, rows }
-}
-
-function findFreeCell(taken, key, columns, width, height) {
-  for (let row = 0; row < 64; row++) {
-    for (let col = 0; col + width <= columns; col++) {
-      let free = true
-      for (let dx = 0; dx < width && free; dx++) {
-        for (let dy = 0; dy < height && free; dy++) {
-          if (taken.has(key(col + dx, row + dy))) free = false
-        }
-      }
-      if (free) return [col, row]
-    }
-  }
-  return [0, 0]
 }

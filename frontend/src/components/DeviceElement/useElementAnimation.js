@@ -16,7 +16,9 @@ import { useFrame } from '@react-three/fiber'
  *     animation.play()                           // on click
  */
 export function useElementAnimation(motion) {
-  const targets = useRef({ root: null, part: null, material: null, light: null })
+  const targets = useRef({
+    root: null, part: null, material: null, light: null, glow: null,
+  })
   const rest = useRef(null)
   const state = useRef({
     value: 0,      // currently applied offset
@@ -112,7 +114,7 @@ export function useElementAnimation(motion) {
 // that is here about a centimetre.
 const LIGHT_SCALE = 0.00009
 
-function apply(motion, value, { root, part, material, light }, rest) {
+function apply(motion, value, { root, part, material, light, glow }, rest) {
   if (!rest) return
 
   switch (motion.kind) {
@@ -129,6 +131,13 @@ function apply(motion, value, { root, part, material, light }, rest) {
       // The lens is 5 mm across - far too little area to look like a light
       // source on its own. What sells it is the housing around it lighting up.
       if (light) light.intensity = Math.max(0, value) * LIGHT_SCALE
+      if (glow) {
+        // Fades and grows together, so switching on reads as light spreading
+        // rather than a disc appearing.
+        const lit = Math.max(0, value) / Math.max(motion.amount, 1)
+        glow.material.opacity = lit * 0.85
+        glow.scale.setScalar(0.02 + lit * 0.014)
+      }
       break
 
     case 'pulse':

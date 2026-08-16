@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
+import { ElementLights } from '../DeviceElement/ElementLights'
 import { elementType } from '../DeviceElement/element-types'
 import './element-card.scss'
 
@@ -93,13 +94,7 @@ export function ElementCard({
       >
         <span className="element-card-stage">
           <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
-            {/* Softer than it was. A key light strong enough to model the
-                shape also drives the accent towards white on curved surfaces,
-                which is what made it read as garish. */}
-            <ambientLight intensity={1.5} />
-            <directionalLight position={[0.05, 0.09, 0.06]} intensity={1.5} />
-            <directionalLight position={[-0.06, 0.02, -0.07]} intensity={1.1} />
-            <directionalLight position={[0.02, -0.04, 0.05]} intensity={0.4} />
+            <ElementLights />
             <Suspense fallback={null}>
               <group position={SCENE_OFFSET}>
                 <DeviceElement

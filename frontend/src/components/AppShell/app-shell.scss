@@ -37,7 +37,9 @@ $header-height: 76px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
+  // Tight, so the logo and the word read as one: the A on the keycap is the
+  // first letter of the name, not a picture standing next to it.
+  gap: 1px;
   padding-inline-start: 6px;
   overflow: hidden;
   transition: inline-size 180ms ease;

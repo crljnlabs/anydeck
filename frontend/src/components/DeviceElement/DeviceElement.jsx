@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
+import { AdditiveBlending } from 'three'
+import { glowTexture } from './glow-texture'
 import {
   ACCENT_MATERIAL,
   BASE_MATERIAL,
@@ -38,6 +40,7 @@ export function DeviceElement({
   const { scene } = useGLTF(modelUrl(type.id))
   const rootRef = useRef(null)
   const lightRef = useRef(null)
+  const glowRef = useRef(null)
   const animation = useElementAnimation(type.motion)
 
   // Every instance needs its own copy: three shares geometry and materials
@@ -72,6 +75,7 @@ export function DeviceElement({
       part: instance.part,
       material: instance.animated,
       light: lightRef.current,
+      glow: glowRef.current,
     })
   }, [animation, instance])
 
@@ -109,14 +113,29 @@ export function DeviceElement({
     <group ref={rootRef} {...groupProps}>
       <primitive object={instance.model} />
       {type.motion.kind === 'glow' ? (
-        <pointLight
-          ref={lightRef}
-          position={[0, 0.008, 0]}
-          intensity={0}
-          distance={0.05}
-          decay={2}
-          color={accent}
-        />
+        <>
+          <pointLight
+            ref={lightRef}
+            position={[0, 0.008, 0]}
+            intensity={0}
+            distance={0.05}
+            decay={2}
+            color={accent}
+          />
+          {/* The halo. Additive so it brightens whatever is behind it instead
+              of covering it, and depth-write off so it never hides the lens. */}
+          <sprite ref={glowRef} position={[0, 0.008, 0]} scale={[0.02, 0.02, 0.02]}>
+            <spriteMaterial
+              map={glowTexture()}
+              color={accent}
+              transparent
+              opacity={0}
+              blending={AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </sprite>
+        </>
       ) : null}
     </group>
   )

@@ -4,6 +4,7 @@ import { Box3, Vector3 } from 'three'
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
+import { ElementLights } from '../DeviceElement/ElementLights'
 import { CELL_PITCH, gridExtent } from './element-layout'
 import './device-board.scss'
 
@@ -98,12 +99,7 @@ export function DeviceBoard({
           dpr={[1, 2]}
           gl={{ antialias: true }}
         >
-          {/* Softer than it was: a key light strong enough to model the shape
-              also drives the accent towards white on curved surfaces. */}
-          <ambientLight intensity={1.5} />
-          <directionalLight position={[0.05, 0.12, 0.08]} intensity={1.5} />
-          <directionalLight position={[-0.08, 0.03, -0.09]} intensity={1.1} />
-          <directionalLight position={[0.02, -0.05, 0.06]} intensity={0.4} />
+          <ElementLights />
           <Suspense fallback={null}>
             <group position={SCENE_OFFSET}>
               {elements.map((item) => (
