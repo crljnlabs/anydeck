@@ -46,7 +46,7 @@ def stream_output(name: str, process: subprocess.Popen) -> threading.Thread:
 POSIX = os.name == "posix"
 
 
-def spawn(name: str, command: list, cwd) -> subprocess.Popen:
+def spawn(name: str, command: list, cwd, env=None) -> subprocess.Popen:
     common.info(f"Starting {name}: {' '.join(str(part) for part in command)}")
     process = subprocess.Popen(
         command,
@@ -55,7 +55,7 @@ def spawn(name: str, command: list, cwd) -> subprocess.Popen:
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
-        env=common.env_without_venv(),
+        env=env or common.env_without_venv(),
         # Own process group: "npm run dev" does not forward signals to vite, so
         # the whole group has to be signalled instead of just the direct child.
         start_new_session=POSIX,
@@ -102,6 +102,8 @@ def install_signal_handlers() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the anydeck dev servers.")
+    parser.add_argument("--app", action="store_true",
+                        help="run the real app - tray and window - against the vite dev server")
     parser.add_argument("--backend-only", action="store_true", help="do not start the vite dev server")
     parser.add_argument("--frontend-only", action="store_true", help="do not start the backend")
     parser.add_argument("--port", type=int, default=common.BACKEND_PORT, help="backend port")
@@ -113,17 +115,33 @@ def main() -> None:
     if not args.frontend_only:
         common.ensure_backend_deps()
         common.check_linux_gui_backend()
-        processes.append(spawn(
-            "backend",
-            [
-                str(common.venv_python()), "-m", "uvicorn", "app:app",
-                "--reload",
-                # Never bind to 0.0.0.0 - the API must stay local (requirements.md).
-                "--host", common.BACKEND_HOST,
-                "--port", str(args.port),
-            ],
-            common.BACKEND_SRC,
-        ))
+
+        if args.app:
+            # The whole program: tray icon, and a real window instead of a
+            # browser tab. The window is pointed at vite rather than at the
+            # built frontend, which is the only way to get hot reloading inside
+            # it. No --reload here: restarting the process would take the tray
+            # icon with it.
+            environment = common.env_without_venv()
+            environment["ANYDECK_WINDOW_URL"] = f"http://localhost:{common.FRONTEND_PORT}"
+            processes.append(spawn(
+                "app",
+                [str(common.venv_python()), "-u", "main.py", "--background"],
+                common.BACKEND_SRC,
+                env=environment,
+            ))
+        else:
+            processes.append(spawn(
+                "backend",
+                [
+                    str(common.venv_python()), "-m", "uvicorn", "app:app",
+                    "--reload",
+                    # Never bind to 0.0.0.0 - the API must stay local (requirements.md).
+                    "--host", common.BACKEND_HOST,
+                    "--port", str(args.port),
+                ],
+                common.BACKEND_SRC,
+            ))
 
     if not args.backend_only:
         common.ensure_frontend_deps()

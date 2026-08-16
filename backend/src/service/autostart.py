@@ -20,6 +20,8 @@ import os
 import sys
 from pathlib import Path
 
+from utils.launch import self_command
+
 APP_NAME = "anydeck"
 
 # Must match the bundle identifier in packaging/anydeck.spec. macOS keys the
@@ -29,22 +31,12 @@ BUNDLE_ID = "com.crljnlabs.anydeck"
 
 
 def launch_command() -> list[str]:
-    """How the operating system should start anydeck.
+    """How the operating system should start anydeck at login.
 
-    A packaged build is a single executable and `sys.executable` is it. Running
-    from a checkout, `sys.executable` is the Python interpreter, so the entry
-    point has to be named as well - useful for testing the mechanism, though
-    autostart really only makes sense once the app is installed.
+    --background: started at login it belongs in the menu bar, not in the user's
+    face. Started by hand it opens the window instead.
     """
-    # --background: started at login it belongs in the menu bar, not in the
-    # user's face. Started by hand it opens the window instead.
-    if getattr(sys, "frozen", False):
-        return [sys.executable, "--background"]
-    return [
-        sys.executable,
-        str(Path(__file__).resolve().parents[1] / "main.py"),
-        "--background",
-    ]
+    return self_command("--background")
 
 
 def is_supported() -> bool:

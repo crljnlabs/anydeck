@@ -2,16 +2,23 @@
 
 `app.py` only builds the FastAPI object - it is imported by uvicorn workers and
 by the packaged executable alike, so anything started at import time would start
-once per import. This file owns the process instead, and does nothing but wire
-the four parts of it together:
+once per import. This file owns the process instead, and mostly just wires the
+parts together.
 
-    listener   own thread, started first, outlives the window
-    server     own thread, so a busy request cannot freeze the interface
-    tray       the menu bar icon
-    lifecycle  owns the main thread and decides when a window gets built
+It has two shapes, chosen by argument:
 
-Started with --background it stays in the menu bar - that is how the login item
-starts it. Started by hand it opens the window straight away, because a program
+    (default)   the background: device listener, HTTP server, tray icon
+    --window    a window, and nothing else
+
+They are separate processes on purpose, and not for tidiness. One process cannot
+reliably hold a tray icon and build its window later - pystray and pywebview both
+drive the same macOS application object, and handing the run loop from one to the
+other fails about half the time. Splitting them removes the conflict instead of
+working around it, and it means closing the window actually gives its ~250 MB
+back rather than leaving it resident.
+
+Started with --background the tray comes up alone; that is how the login item
+starts it. Started by hand it opens a window straight away, because a program
 that appears to do nothing when double-clicked is a broken program.
 """
 
@@ -23,9 +30,7 @@ import urllib.error
 import urllib.request
 
 from app import HOST, PORT
-from runtime import listener, server
-from runtime.lifecycle import lifecycle as build_lifecycle
-from runtime import tray as tray_runtime
+from runtime import listener, server, tray, window
 from service import window as window_service
 
 
@@ -42,7 +47,7 @@ def hand_over_to_running_instance() -> bool:
         request = urllib.request.Request(
             f"http://{HOST}:{PORT}/api/window/show", method="POST"
         )
-        urllib.request.urlopen(request, timeout=2).close()
+        urllib.request.urlopen(request, timeout=5).close()
     except (urllib.error.URLError, OSError):
         # Something is on the port but it is not us, or it is not answering.
         # Carrying on would fail at bind time with a far less clear message.
@@ -52,34 +57,54 @@ def hand_over_to_running_instance() -> bool:
     return True
 
 
+def run_background(*, open_window_now: bool) -> None:
+    listener.start()
+    server.start()
+
+    # Lets the API open the window - used when a second instance hands over.
+    window_service.register(window.open)
+
+    icon = tray.build(on_quit=lambda: icon.stop())
+
+    if open_window_now:
+        window.open()
+
+    try:
+        # Owns the main thread until the tray is stopped.
+        tray.run(icon)
+    finally:
+        # After the loop has ended, so this runs on the main thread with nothing
+        # else competing for it.
+        window.close()
+        listener.stop()
+        server.stop()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run anydeck.")
     parser.add_argument(
         "--background",
         action="store_true",
-        help="start in the menu bar without opening the window (used by autostart)",
+        help="start in the menu bar without opening a window (used by autostart)",
+    )
+    parser.add_argument(
+        "--window",
+        metavar="URL",
+        help=argparse.SUPPRESS,  # started by the background process, not by hand
     )
     args = parser.parse_args()
+
+    if args.window:
+        # A window and nothing else: no tray, no server, no listener.
+        from runtime import window_process
+
+        window_process.run(args.window)
+        return
 
     if hand_over_to_running_instance():
         return
 
-    listener.start()
-    server.start()
-
-    life = build_lifecycle()
-    # Lets the API bring the window forward when a second instance hands over.
-    window_service.register(life.request_window)
-
-    tray = tray_runtime.build(life)
-    tray_runtime.start(tray)
-
-    try:
-        life.run(open_window_now=not args.background)
-    finally:
-        tray.visible = False
-        listener.stop()
-        server.stop()
+    run_background(open_window_now=not args.background)
 
 
 if __name__ == "__main__":

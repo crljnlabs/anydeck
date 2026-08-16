@@ -1,89 +1,74 @@
-"""The configuration window.
+"""The window, seen from the background process.
 
-Created the first time it is asked for, and hidden rather than destroyed from
-then on. Both halves of that are measured, not assumed:
-
-- A window that exists but is hidden costs nothing. Starting the GUI loop costs
-  about 130 MB whether or not anything is ever shown, so the loop is not started
-  until the user asks for a window.
-- Destroying a window frees none of that and leaks a renderer process per cycle
-  (three open/close rounds: ~195 MB and climbing, against ~150 MB flat when
-  hiding).
+From here the window is a child process, not an object: started when the user
+asks for one, and gone when they close it. See `window_process` for why it is a
+separate process at all.
 """
 
 from __future__ import annotations
 
 import os
+import subprocess
 
 from app import HOST, PORT
+from utils.launch import self_command
 
-TITLE = "anydeck"
-
-# Points at the built frontend served by our own backend. During frontend
-# development it is set to the vite server instead, which is the only way to get
-# hot reloading inside the real window - see scripts/dev.py --app.
+# Points at the frontend our own backend serves. During frontend development it
+# is set to the vite server instead, which is the only way to get hot reloading
+# inside the real window - see scripts/dev.py --app.
 DEFAULT_URL = os.environ.get("ANYDECK_WINDOW_URL", f"http://{HOST}:{PORT}/")
 
-_window = None
+_process: subprocess.Popen | None = None
 
 
-def exists() -> bool:
-    return _window is not None
+def is_open() -> bool:
+    return _process is not None and _process.poll() is None
 
 
 def open() -> None:  # noqa: A001 - the verb is the clearest name here
-    """Create the window and hand the main thread to the GUI loop.
+    """Show the window, starting the process if it is not running.
 
-    Only ever called from the main thread. It does not return until the window
-    is destroyed, which happens on quit and at no other time.
+    Safe to call from a tray callback: starting a process is quick, and the slow
+    part - building the webview - happens in the child.
     """
-    global _window
+    global _process
 
-    if _window is not None:
-        _window.show()
+    if is_open():
+        # The child cannot raise itself from the outside, so it is told to.
+        _send("show")
         return
 
-    # Imported here on purpose, never at module level. Importing pywebview's
-    # cocoa backend sets the process to a regular, dock-icon application; doing
-    # that at import time would put an icon in the dock during the background
-    # phase, when there is no window at all.
-    import webview
-
-    _window = webview.create_window(
-        TITLE, DEFAULT_URL, width=1100, height=760, min_size=(880, 560)
+    _process = subprocess.Popen(
+        self_command("--window", DEFAULT_URL),
+        stdin=subprocess.PIPE,
+        text=True,
     )
 
-    # Returning False cancels the close, so the window survives and reopening is
-    # instant. Only `closing` and `initialized` have their return value honoured
-    # at all - the other events run their handlers on a separate thread and
-    # discard the result.
-    def on_closing() -> bool:
-        hide()
-        return False
 
-    _window.events.closing += on_closing
+def close() -> None:
+    """Ask the window to go away, and make sure it did."""
+    global _process
 
-    webview.start()
+    if not is_open():
+        _process = None
+        return
 
+    _send("quit")
+    try:
+        _process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        _process.kill()
 
-def show() -> None:
-    if _window is not None:
-        _window.show()
-
-
-def hide() -> None:
-    if _window is not None:
-        _window.hide()
+    _process = None
 
 
-def destroy() -> None:
-    """Tear the window down for good.
-
-    Only on quit. Destroying the last window is also what stops the GUI loop, so
-    this is what lets `open()` return and the process end.
-    """
-    global _window
-
-    if _window is not None:
-        _window.destroy()
-        _window = None
+def _send(command: str) -> None:
+    if _process is None or _process.stdin is None:
+        return
+    try:
+        _process.stdin.write(f"{command}\n")
+        _process.stdin.flush()
+    except (BrokenPipeError, ValueError):
+        # The child went away between the check and the write. Nothing to do -
+        # the next open() will start a fresh one.
+        pass

@@ -14,6 +14,7 @@ from PIL import Image
 
 import pystray
 
+from runtime import window
 from service import autostart as autostart_service
 from utils.paths import icons_dir
 
@@ -33,13 +34,12 @@ def _icon_image() -> Image.Image:
     return Image.open(directory / ICON_FILE)
 
 
-def build(lifecycle, *, labels: dict[str, str] | None = None) -> pystray.Icon:
-    """Create the tray icon. It does not run anything - see runtime.lifecycle.
+def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
+    """Create the tray icon. Running it is the caller's job - see `run` below.
 
-    Every callback here runs on the main thread inside the GUI loop on macOS, so
-    none of them may do real work: a slow callback freezes the whole interface.
-    Opening the window in particular only asks the lifecycle to hand the thread
-    over, and the expensive part happens after that.
+    Every callback here runs on the loop's own thread, so none of them may do
+    real work: a slow callback freezes the menu. Opening the window is only a
+    process start, and the expensive part happens inside that process.
     """
     text = {
         "open": "Open window",
@@ -52,7 +52,7 @@ def build(lifecycle, *, labels: dict[str, str] | None = None) -> pystray.Icon:
         autostart_service.set_enabled(not item.checked)
 
     menu_items = [
-        pystray.MenuItem(text["open"], lambda: lifecycle.request_window(), default=True),
+        pystray.MenuItem(text["open"], lambda: window.open(), default=True),
         pystray.Menu.SEPARATOR,
     ]
 
@@ -68,32 +68,21 @@ def build(lifecycle, *, labels: dict[str, str] | None = None) -> pystray.Icon:
             pystray.Menu.SEPARATOR,
         ]
 
-    menu_items.append(pystray.MenuItem(text["quit"], lambda: lifecycle.request_quit()))
+    menu_items.append(pystray.MenuItem(text["quit"], lambda: on_quit()))
 
     return pystray.Icon(
         APP_NAME,
         _icon_image(),
         APP_NAME,
         menu=pystray.Menu(*menu_items),
-        **lifecycle.tray_options(),
     )
 
 
-def start(icon: pystray.Icon) -> None:
-    """Put the icon on screen without letting pystray run a loop of its own.
+def run(icon: pystray.Icon) -> None:
+    """Hand the main thread to the tray, and return when it is asked to stop.
 
-    Two deliberate deviations from `icon.run()`, both required:
-
-    `run_detached` instead of `run`, because `run`'s loop owns the status item
-    and removes it when the loop ends - and ending that loop is exactly how the
-    window gets opened.
-
-    An empty setup callback instead of the default one, because the default sets
-    `visible = True` on a thread pystray spawns for it. On macOS that touches
-    AppKit from a background thread. It does not fail there and then: the process
-    aborts with SIGTRAP later, the moment the GUI loop next validates its state -
-    which is when the user first opens the window. Making the icon visible from
-    the calling thread, which is the main one, avoids it entirely.
+    `icon.run()` - the supported path - rather than the detached one. That is
+    only possible because this process never opens a window itself: pystray owns
+    the run loop from start to finish and nothing else competes for it.
     """
-    icon.run_detached(setup=lambda _icon: None)
-    icon.visible = True
+    icon.run()
