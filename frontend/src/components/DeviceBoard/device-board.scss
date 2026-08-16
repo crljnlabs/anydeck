@@ -2,6 +2,7 @@
    little wider than the elements rather than a band across the whole page -
    the point of the surface is to show what belongs together. */
 .device-board {
+  position: relative;
   border-radius: 16px;
   background: color-mix(in oklab, currentColor 4%, transparent);
 
@@ -9,5 +10,89 @@
      is. */
   &[data-interactive='false'] {
     pointer-events: none;
+  }
+
+  /* The canvas keeps its own stacking level so the grid can sit behind it. */
+  canvas {
+    position: relative;
+    z-index: 1;
+  }
+
+  &[data-dragging='true'] canvas {
+    cursor: grabbing;
+  }
+}
+
+/* Behind the canvas, which is transparent: the elements standing on the
+   surface cover the lines running behind them, so the grid is occluded by the
+   device without being part of the 3D scene. */
+.board-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  line {
+    stroke: currentColor;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+}
+
+/* Everywhere, faint: enough to see that there is a grid at all. */
+.board-grid-far line {
+  opacity: 0.12;
+}
+
+/* Near the element in hand, strong: masked by a gradient that fades out with
+   distance, so the emphasis is where the element is going rather than spread
+   evenly over a board the user is not looking at. */
+.board-grid-near line {
+  opacity: 0.5;
+}
+
+.board-grid-target {
+  fill-opacity: 0.16;
+  stroke-width: 1.5;
+  stroke-opacity: 0.9;
+  rx: 3;
+}
+
+/* --- shortcuts, while an element is being carried -------------------------- */
+
+.drag-hints {
+  position: fixed;
+  inset-block-end: 22px;
+  inset-inline: 0;
+  z-index: 70;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 9px 16px;
+  margin-inline: auto;
+  inline-size: fit-content;
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  border-radius: 10px;
+  font-size: 13px;
+  color: light-dark(#3f434d, #d1d5db);
+  background: light-dark(#ffffff, #1c1f26);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  pointer-events: none;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  kbd {
+    min-inline-size: 22px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    background: color-mix(in oklab, currentColor 12%, transparent);
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSettings } from '../contexts/settings'
 import { DeviceBoard, gridLayout } from '../components/DeviceBoard'
 import { ELEMENT_TYPES, ELEMENT_TYPE_LIST, elementType } from '../components/DeviceElement'
@@ -32,20 +32,30 @@ export function DevicePage({ id, navigate }) {
   // share one place to land.
   const [showing, setShowing] = useState('element')
 
-  const elements = useMemo(
-    () =>
-      device
-        ? gridLayout(
-            device.elements.map((item) => ({
-              key: item.id,
-              typeId: item.typeId,
-              label: item.name,
-              cell: item.cell,
-            })),
-          )
-        : [],
-    [device],
+  // Where the elements sit. Held here rather than in the board, because it is
+  // the device that has an arrangement - the board only draws one. This is the
+  // state that will be saved per device once there is a backend to save it to.
+  const [placements, setPlacements] = useState(() =>
+    (device?.elements ?? []).map((item) => ({
+      key: item.id,
+      typeId: item.typeId,
+      label: item.name,
+      cell: item.cell,
+      rotation: item.rotation ?? 0,
+    })),
   )
+
+  const elements = useMemo(() => gridLayout(placements), [placements])
+
+  // The board hands back every element's cell, not just the moved one: moving
+  // an element pushes its neighbours aside, so a move is a change to the whole
+  // arrangement rather than to one entry in it.
+  const rearrange = useCallback((next) => {
+    const byKey = new Map(next.map((item) => [item.key, item]))
+    setPlacements((current) =>
+      current.map((item) => ({ ...item, ...byKey.get(item.key) })),
+    )
+  }, [])
 
   if (!device) {
     return (
@@ -58,7 +68,12 @@ export function DevicePage({ id, navigate }) {
     )
   }
 
-  const selected = device.elements.find((item) => item.id === selectedId) ?? null
+  // The arrangement lives in `placements`, everything else on the device, so
+  // the panel has to read the position from the one and the rest from the
+  // other - otherwise it keeps reporting where an element used to be.
+  const found = device.elements.find((item) => item.id === selectedId)
+  const placed = placements.find((item) => item.key === selectedId)
+  const selected = found ? { ...found, cell: placed?.cell ?? found.cell, rotation: placed?.rotation ?? found.rotation } : null
 
   return (
     <div className="device-page">
@@ -96,6 +111,7 @@ export function DevicePage({ id, navigate }) {
             setSelectedId(chosen?.key ?? null)
             setShowing('element')
           }}
+          onLayoutChange={rearrange}
           cellSize={22}
         />
       </div>

@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Box3, Vector3 } from 'three'
 import { useSettings } from '../../contexts/settings'
@@ -6,14 +6,28 @@ import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
 import { ElementBoundary } from '../DeviceElement/ElementBoundary'
 import { ElementLights } from '../DeviceElement/ElementLights'
+import { SCENE_OFFSET, viewCamera } from '../DeviceElement/element-view'
 import {
-  ELEMENT_HEIGHT,
-  ELEVATION,
-  SCENE_OFFSET,
-  viewCamera,
-} from '../DeviceElement/element-view'
-import { CELL_PITCH, gridExtent } from './element-layout'
+  CELL_PITCH,
+  gridExtent,
+  normaliseCells,
+  placeWithinGrid,
+  withPositions,
+} from './element-layout'
+import { boardFrame } from './board-frame'
+import { BoardGrid } from './BoardGrid'
+import { DragHints } from './DragHints'
+import { useBoardDrag } from './useBoardDrag'
 import './device-board.scss'
+
+/** Shown while an element is in hand. Nothing else is bound during a drag. */
+const DRAG_HINTS = [
+  { key: 'R', label: 'Rotate' },
+  { key: 'Esc', label: 'Cancel' },
+]
+
+/** How far an element lifts off the surface while it is being carried. */
+const CARRY_LIFT = 0.006
 
 
 /**
@@ -30,11 +44,14 @@ import './device-board.scss'
  * drawn at exactly the same size as one in the middle, one grid cell is always
  * `cellSize` pixels, and the projection used to place the action ring is exact.
  *
- * @param elements    from gridLayout(): each has cell, span and position
- * @param interactive false renders the device as a picture - no clicks, no
- *                    animation, no menu. For anywhere a device is shown rather
- *                    than edited.
- * @param menu        entries for the ring, or null for none
+ * @param elements       from gridLayout(): each has cell, span and position
+ * @param interactive    false renders the device as a picture - no clicks, no
+ *                       animation, no menu. For anywhere a device is shown
+ *                       rather than edited.
+ * @param menu           entries for the ring, or null for none
+ * @param onLayoutChange called with { key, cell, rotation } when an element has
+ *                       been moved. Leaving it out makes the board read-only:
+ *                       nothing can be picked up, and no grid appears.
  */
 export function DeviceBoard({
   elements,
@@ -43,6 +60,7 @@ export function DeviceBoard({
   menu = null,
   onSelect,
   onMenuSelect,
+  onLayoutChange,
   interactive = true,
   cellSize = 20,   // pixels per cell; a 1u key is 4 cells, so 80 px
   padding = 26,
@@ -52,18 +70,42 @@ export function DeviceBoard({
   // Colours follow the app theme unless a caller overrides them.
   const { element } = useSettings()
 
-  const { columns, rows } = gridExtent(elements)
+  // Both are handed to an effect that listens on the window, so a fresh object
+  // every render would mean tearing those listeners down and putting them back
+  // on every render.
+  const extent = useMemo(() => gridExtent(elements), [elements])
+  const frame = useMemo(
+    () => boardFrame({ ...extent, cellSize, padding }),
+    [extent, cellSize, padding],
+  )
 
-  // Pixels per metre. Fixing this rather than fitting a camera to the content
-  // is what keeps a cell the same size whether the device has four elements or
-  // forty - two devices side by side stay comparable.
-  const zoom = cellSize / CELL_PITCH
+  // Committing runs the same placement the preview ran, so what is kept is
+  // exactly what was on screen when the element was let go.
+  const commit = useCallback(
+    (dropped) => {
+      const settled = normaliseCells(placeWithinGrid(elements, dropped, extent))
+      onLayoutChange(
+        settled.map(({ key, cell, rotation }) => ({ key, cell, rotation })),
+      )
+    },
+    [elements, extent, onLayoutChange],
+  )
 
-  const width = columns * cellSize + padding * 2
-  const height =
-    rows * cellSize * Math.sin(ELEVATION) +
-    ELEMENT_HEIGHT * zoom * Math.cos(ELEVATION) +
-    padding * 2
+  const { drag, begin, takeClick } = useBoardDrag({
+    elements,
+    frame,
+    extent,
+    onDrop: interactive && onLayoutChange ? commit : null,
+  })
+
+  // While an element is in hand the board shows where things would end up if it
+  // were let go here, neighbours included. Worked out from the committed layout
+  // every time rather than from the last preview, so moving back to where you
+  // started puts everything back where it was instead of leaving a trail.
+  const shown = useMemo(() => {
+    if (!drag) return elements
+    return withPositions(placeWithinGrid(elements, drag, extent), CELL_PITCH, extent)
+  }, [drag, elements, extent])
 
   useEffect(() => {
     if (!active) return undefined
@@ -75,6 +117,12 @@ export function DeviceBoard({
     }
   }, [active, close])
 
+  // An open ring belongs to an element at a position, and a drag moves them
+  // all, so it cannot stay open across one.
+  useEffect(() => {
+    if (drag) setActive(null)
+  }, [drag])
+
   const activeElement = elements.find((element) => element.key === active?.key)
 
   return (
@@ -82,18 +130,32 @@ export function DeviceBoard({
       <div
         className="device-board"
         data-interactive={interactive}
-        style={{ inlineSize: `${Math.round(width)}px`, blockSize: `${Math.round(height)}px` }}
+        data-dragging={Boolean(drag)}
+        style={{
+          inlineSize: `${Math.round(frame.width)}px`,
+          blockSize: `${Math.round(frame.height)}px`,
+        }}
       >
+        {drag ? (
+          <BoardGrid
+            frame={frame}
+            columns={extent.columns}
+            rows={extent.rows}
+            focus={drag}
+            accent={accent ?? element.accent}
+          />
+        ) : null}
+
         <Canvas
           orthographic
-          camera={viewCamera(zoom)}
+          camera={viewCamera(frame.zoom)}
           dpr={[1, 2]}
           gl={{ antialias: true }}
         >
           <ElementLights />
           <Suspense fallback={null}>
             <group position={SCENE_OFFSET}>
-              {elements.map((item) => (
+              {shown.map((item) => (
                 <BoardSlot
                   key={item.key}
                   element={item}
@@ -101,14 +163,19 @@ export function DeviceBoard({
                   housing={housing ?? element.housing}
                   interactive={interactive}
                   selectable={interactive && Boolean(menu?.length)}
+                  carried={drag?.key === item.key}
                   onOpen={setActive}
                   onSelect={onSelect}
+                  onPress={begin}
+                  takeClick={takeClick}
                 />
               ))}
             </group>
           </Suspense>
         </Canvas>
       </div>
+
+      {drag ? <DragHints hints={DRAG_HINTS} /> : null}
 
       {active && menu?.length ? (
         <RadialMenu
@@ -124,7 +191,18 @@ export function DeviceBoard({
   )
 }
 
-function BoardSlot({ element, accent, housing, interactive, selectable, onOpen, onSelect }) {
+function BoardSlot({
+  element,
+  accent,
+  housing,
+  interactive,
+  selectable,
+  carried,
+  onOpen,
+  onSelect,
+  onPress,
+  takeClick,
+}) {
   const groupRef = useRef(null)
   const playRef = useRef(null)
   const { camera, gl } = useThree()
@@ -133,6 +211,10 @@ function BoardSlot({ element, accent, housing, interactive, selectable, onOpen, 
     // Only the frontmost element under the pointer reacts, otherwise the click
     // also hits whatever is behind it.
     event.stopPropagation()
+    // The click that ends a drag is still a click as far as the browser is
+    // concerned. Letting it through would play the press animation and open the
+    // ring every time an element was put down.
+    if (takeClick?.()) return
     playRef.current?.()
     // Selecting is separate from opening the ring: a click should already tell
     // the rest of the screen which element you mean, without going through a
@@ -144,13 +226,28 @@ function BoardSlot({ element, accent, housing, interactive, selectable, onOpen, 
   const handlers = interactive
     ? {
         onClick: handleClick,
+        onPointerDown: (event) => {
+          event.stopPropagation()
+          onPress?.(element, event.nativeEvent ?? event)
+        },
         onPointerOver: () => (gl.domElement.style.cursor = 'pointer'),
         onPointerOut: () => (gl.domElement.style.cursor = 'auto'),
       }
     : {}
 
+  const [x, y, z] = element.position
+  // A quarter turn on the board is a quarter turn about the upright axis. The
+  // sign follows from the grid: a column runs along +x and a row along +z, so a
+  // clockwise turn on screen is a negative rotation here.
+  const rotation = [0, (-(element.rotation ?? 0) * Math.PI) / 180, 0]
+
   return (
-    <group ref={groupRef} position={element.position} {...handlers}>
+    <group
+      ref={groupRef}
+      position={[x, carried ? y + CARRY_LIFT : y, z]}
+      rotation={rotation}
+      {...handlers}
+    >
       <ElementBoundary>
         <DeviceElement
           typeId={element.typeId}

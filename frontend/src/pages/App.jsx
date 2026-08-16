@@ -36,7 +36,15 @@ export function App() {
   return (
     <SettingsProvider>
       <AppShell route={route} onNavigate={navigate}>
-        <Page {...route.params} navigate={navigate} />
+        {/* A different screen, or the same screen for a different device, is a
+            different page and starts fresh. Without this the state a page holds
+            about what it is showing - a device's arrangement, say - would be
+            carried over to the next device shown in the same slot. */}
+        <Page
+          key={`${route.name}:${route.params.id ?? ''}`}
+          {...route.params}
+          navigate={navigate}
+        />
       </AppShell>
     </SettingsProvider>
   )
