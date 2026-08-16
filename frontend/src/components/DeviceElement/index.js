@@ -14,3 +14,4 @@ export {
   ToggleSwitch, Joystick, LedIndicator, DisplayScreen, UnknownElement,
 } from './element-components'
 export { ELEMENT_COMPONENTS, elementComponent, preloadElementModels } from './element-registry'
+export { ElementBoundary } from './ElementBoundary'

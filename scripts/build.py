@@ -12,7 +12,7 @@ Cross compiling is not possible - the artifact is always built for the system
 this script runs on. The other platforms are covered by the matrix in
 .github/workflows/release.yml, which runs this same script.
 
-  macOS    anydeck.app -> .dmg           (hdiutil, ships with macOS)
+  macOS    Anydeck.app -> .dmg           (hdiutil, ships with macOS)
   Windows  anydeck\\    -> .zip + .exe    (.exe needs Inno Setup / iscc)
   Linux    anydeck/    -> .tar.gz + .deb (.deb needs dpkg-deb)
 
@@ -62,14 +62,14 @@ def run_pyinstaller(python: Path) -> Path:
         "--workpath", str(common.WORK_DIR / "pyinstaller"),
         str(common.PACKAGING_DIR / "anydeck.spec"),
     ])
-    bundle = common.DIST_DIR / ("anydeck.app" if common.platform_key() == "macos" else "anydeck")
+    bundle = common.DIST_DIR / (f"{common.APP_NAME}.app" if common.platform_key() == "macos" else common.APP_NAME)
     if not bundle.exists():
         common.fail(f"PyInstaller produced no bundle at {bundle}")
     return bundle
 
 
 def package_macos(bundle: Path, version: str, target: Path) -> list[Path]:
-    dmg = target / f"anydeck-{version}-macos-{common.arch_key()}.dmg"
+    dmg = target / f"{common.APP_ID}-{version}-macos-{common.arch_key()}.dmg"
     common.info(f"Creating {dmg.name}")
 
     # The image gets the app AND a link to /Applications, because that link is
@@ -95,7 +95,7 @@ def package_macos(bundle: Path, version: str, target: Path) -> list[Path]:
 
 
 def package_windows(bundle: Path, version: str, target: Path) -> list[Path]:
-    artifacts = [_make_archive(bundle, target / f"anydeck-{version}-windows-{common.arch_key()}", "zip")]
+    artifacts = [_make_archive(bundle, target / f"{common.APP_ID}-{version}-windows-{common.arch_key()}", "zip")]
 
     script = common.PACKAGING_DIR / "windows-installer.iss"
     if not common.tool_available("iscc"):
@@ -111,12 +111,12 @@ def package_windows(bundle: Path, version: str, target: Path) -> list[Path]:
         f"/DOutputName=anydeck-{version}-windows-{common.arch_key()}-setup",
         str(script),
     ])
-    artifacts.append(target / f"anydeck-{version}-windows-{common.arch_key()}-setup.exe")
+    artifacts.append(target / f"{common.APP_ID}-{version}-windows-{common.arch_key()}-setup.exe")
     return artifacts
 
 
 def package_linux(bundle: Path, version: str, target: Path) -> list[Path]:
-    artifacts = [_make_archive(bundle, target / f"anydeck-{version}-linux-{common.arch_key()}", "gztar")]
+    artifacts = [_make_archive(bundle, target / f"{common.APP_ID}-{version}-linux-{common.arch_key()}", "gztar")]
 
     if not common.tool_available("dpkg-deb"):
         common.warn("dpkg-deb not found - only the portable .tar.gz was created")
@@ -156,7 +156,7 @@ def package_linux(bundle: Path, version: str, target: Path) -> list[Path]:
         f"Description: {DEB_DESCRIPTION}\n"
     )
 
-    deb = target / f"anydeck-{version}-linux-{common.arch_key()}.deb"
+    deb = target / f"{common.APP_ID}-{version}-linux-{common.arch_key()}.deb"
     common.run(["dpkg-deb", "--build", "--root-owner-group", str(stage), str(deb)])
     artifacts.append(deb)
     return artifacts

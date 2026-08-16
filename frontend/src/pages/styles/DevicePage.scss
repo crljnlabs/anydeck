@@ -191,8 +191,9 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-block-size: 34px;
   padding: 6px 12px;
-  border: 1px solid color-mix(in oklab, currentColor 16%, transparent);
+  border: 1px solid color-mix(in oklab, currentColor 26%, transparent);
   border-radius: 999px;
   font: inherit;
   font-size: 13px;
@@ -210,17 +211,25 @@
 }
 
 .profile-number {
-  inline-size: 19px;
-  block-size: 19px;
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
   display: grid;
   place-items: center;
+  // Without this the digit sits low: it inherits the row's line height, which
+  // is set for text, not for a circle.
+  line-height: 1;
   border-radius: 50%;
   font-size: 12px;
   font-weight: 700;
-  color: light-dark(#ffffff, #111318);
-  background: color-mix(in oklab, currentColor 45%, transparent);
+  // Legible on both states rather than only on the selected one.
+  color: light-dark(#ffffff, #14161b);
+  background: color-mix(in oklab, currentColor 55%, transparent);
 
-  .profile-chip[data-on='true'] & { background: var(--accent, #f97316); }
+  .profile-chip[data-on='true'] & {
+    color: light-dark(#ffffff, #14161b);
+    background: var(--accent, #f97316);
+  }
 }
 
 .profile-auto {
@@ -231,11 +240,21 @@
   background: color-mix(in oklab, currentColor 12%, transparent);
 }
 
-// Dashed, because it makes something rather than selecting something.
+// Dashed, because it makes something rather than selecting something - and
+// dashed at rest, not only under the pointer, or it reads as a gap.
 .profile-add {
   border-style: dashed;
-  padding-inline: 14px;
-  font-size: 15px;
+  border-color: color-mix(in oklab, currentColor 38%, transparent);
+  // Same height as the chips beside it: it is one of them, not a smaller
+  // afterthought.
+  min-block-size: 34px;
+  padding-inline: 15px;
+  font-size: 16px;
   line-height: 1;
-  color: color-mix(in oklab, currentColor 60%, transparent);
+  color: color-mix(in oklab, currentColor 70%, transparent);
+
+  &:hover {
+    border-color: color-mix(in oklab, var(--accent, #f97316) 70%, transparent);
+    color: inherit;
+  }
 }

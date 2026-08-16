@@ -36,7 +36,8 @@ REQUIREMENTS_DEV = BACKEND_DIR / "requirements-dev.txt"
 BASE_STAMP = VENV_DIR / ".deps-stamp"
 DEV_STAMP = VENV_DIR / ".deps-dev-stamp"
 
-APP_NAME = "anydeck"
+APP_NAME = "Anydeck"          # what the user sees: bundle, window, tray, volume
+APP_ID = "anydeck"            # what the machine sees: executables, packages, paths
 BACKEND_HOST = "127.0.0.1"
 BACKEND_PORT = 8765
 FRONTEND_PORT = 5173

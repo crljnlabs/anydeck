@@ -8,6 +8,7 @@ import {
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
+import { ElementBoundary } from '../DeviceElement/ElementBoundary'
 import { ElementLights } from '../DeviceElement/ElementLights'
 import { elementType } from '../DeviceElement/element-types'
 import './element-card.scss'
@@ -115,12 +116,14 @@ export function ElementCard({
               {/* Every model is centred on x and z and stands on y = 0, so
                   half its height is all it takes to centre it. */}
               <group position={[0, -size[1] / 2, 0]}>
-                <DeviceElement
-                  typeId={type.id}
-                  accent={accent ?? element.accent}
-                  housing={housing ?? element.housing}
-                  playRef={playRef}
-                />
+                <ElementBoundary>
+                  <DeviceElement
+                    typeId={type.id}
+                    accent={accent ?? element.accent}
+                    housing={housing ?? element.housing}
+                    playRef={playRef}
+                  />
+                </ElementBoundary>
               </group>
             </Suspense>
           </Canvas>

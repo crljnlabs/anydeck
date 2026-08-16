@@ -5,7 +5,7 @@
 // longer translation does not clip.
 
 $sidebar-expanded: 208px;
-$sidebar-collapsed: 68px;
+$sidebar-collapsed: 58px;
 $header-height: 84px;
 
 .app-shell {
@@ -116,10 +116,9 @@ $header-height: 84px;
     transition: background 140ms ease, color 140ms ease;
 
     svg {
-      inline-size: 21px;
-      block-size: 21px;
+      inline-size: 22px;
+      block-size: 22px;
       flex: none;
-      transition: inline-size 160ms ease, block-size 160ms ease;
     }
 
     span {
@@ -148,21 +147,11 @@ $header-height: 84px;
     }
   }
 
-  // Collapsed, the icon is the only thing left, so it carries the whole button
-  // and needs to be big enough to aim at.
-  .app-shell[data-collapsed='true'] & button {
-    justify-content: center;
-    padding-inline: 0;
-
-    svg {
-      inline-size: 26px;
-      block-size: 26px;
-    }
-  }
-
+  // Collapsing takes the label's space away and nothing else. The icon keeps
+  // its size and its distance from the edge, so it stays exactly where it was
+  // rather than jumping to a new place at a new size.
   .app-shell[data-collapsed='true'] & button span {
     opacity: 0;
-    inline-size: 0;
   }
 }
 

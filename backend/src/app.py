@@ -65,18 +65,24 @@ def _mount_frontend(application: FastAPI, directory: Path) -> None:
     for /settings has no file behind it and must still return index.html. The
     catch-all is registered after the API router, so /api never reaches it.
     """
-    assets = directory / "assets"
+    # Resolved once, because the comparison below is against a resolved path.
+    # In a macOS app bundle these directories are reached through symlinks, so
+    # an unresolved root never matches and every file falls through to the
+    # single-page fallback - which is how .glb requests came back as HTML.
+    root = directory.resolve()
+
+    assets = root / "assets"
     if assets.is_dir():
         application.mount("/assets", StaticFiles(directory=assets), name="assets")
 
-    index = directory / "index.html"
+    index = root / "index.html"
 
     @application.get("/{path:path}", include_in_schema=False)
     def serve_frontend(path: str):
-        candidate = directory / path
-        # Only serve real files from inside the frontend directory; a path like
+        candidate = (root / path).resolve()
+        # Only real files from inside the frontend directory; a path like
         # ../../etc/passwd must not resolve out of it.
-        if path and candidate.is_file() and directory in candidate.resolve().parents:
+        if path and candidate.is_file() and root in candidate.parents:
             return FileResponse(candidate)
         return FileResponse(index)
 

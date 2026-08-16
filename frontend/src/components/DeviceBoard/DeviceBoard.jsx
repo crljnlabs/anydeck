@@ -4,6 +4,7 @@ import { Box3, Vector3 } from 'three'
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
+import { ElementBoundary } from '../DeviceElement/ElementBoundary'
 import { ElementLights } from '../DeviceElement/ElementLights'
 import {
   ELEMENT_HEIGHT,
@@ -150,12 +151,14 @@ function BoardSlot({ element, accent, housing, interactive, selectable, onOpen, 
 
   return (
     <group ref={groupRef} position={element.position} {...handlers}>
-      <DeviceElement
-        typeId={element.typeId}
-        accent={accent}
-        housing={housing}
-        playRef={playRef}
-      />
+      <ElementBoundary>
+        <DeviceElement
+          typeId={element.typeId}
+          accent={accent}
+          housing={housing}
+          playRef={playRef}
+        />
+      </ElementBoundary>
     </group>
   )
 }
