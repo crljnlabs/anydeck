@@ -64,8 +64,10 @@ $collapse-time: 180ms;
   display: flex;
   align-items: center;
   // Tight, so the logo and the word read as one: the A on the keycap is the
-  // first letter of the name, not a picture standing next to it.
-  gap: 1px;
+  // first letter of the name, not a picture standing next to it. Not touching
+  // though - the keycap is a raised object with its own edge, and a letter
+  // resting against that edge reads as a mistake rather than as a word.
+  gap: 5px;
   // The one inset that decides everything. Collapsed, the rail is exactly this
   // much wider than the logo on either side, so the logo is already centred -
   // there is nothing to re-align, and the logo therefore never moves.
