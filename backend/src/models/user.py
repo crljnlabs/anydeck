@@ -16,4 +16,3 @@ class User(BaseModel):
 
     username: str
     display_name: str
-    initials: str

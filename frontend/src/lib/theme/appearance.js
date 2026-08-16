@@ -65,11 +65,7 @@ function dim(hex, factor) {
   return `#${channel(16)}${channel(8)}${channel(0)}`
 }
 
-/** Which theme is actually showing, resolving `system` against the OS. */
-export function resolveTheme(theme) {
-  if (theme === 'light' || theme === 'dark') return theme
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
+
 
 /**
  * Push the appearance onto the document.

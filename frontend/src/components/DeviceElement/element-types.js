@@ -34,7 +34,7 @@ const MODEL_BASE = `${import.meta.env.BASE_URL}models/`
 export const ELEMENT_TYPES = {
   'keycap-standard-1u': {
     id: 'keycap-standard-1u',
-    span: [1, 1],
+    span: [4, 4],
     resizable: false,
     label: 'Key 1u',
     description: 'Standard single-width key.',
@@ -44,7 +44,7 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-2u': {
     id: 'keycap-standard-2u',
-    span: [2, 1],
+    span: [8, 4],
     resizable: false,
     label: 'Key 2u',
     description: 'Double-width key, e.g. a space or enter position.',
@@ -54,7 +54,7 @@ export const ELEMENT_TYPES = {
 
   'rotary-encoder': {
     id: 'rotary-encoder',
-    span: [1, 1],
+    span: [4, 4],
     resizable: false,
     label: 'Rotary encoder',
     description: 'Endless knob, turns in detents.',
@@ -66,7 +66,7 @@ export const ELEMENT_TYPES = {
 
   potentiometer: {
     id: 'potentiometer',
-    span: [1, 1],
+    span: [4, 4],
     resizable: false,
     label: 'Potentiometer',
     description: 'Knob with a limited range and a position indicator.',
@@ -76,7 +76,7 @@ export const ELEMENT_TYPES = {
 
   'slider-fader': {
     id: 'slider-fader',
-    span: [3, 1],
+    span: [10, 2],
     resizable: true,
     label: 'Slider',
     description: 'Linear fader travelling along its track.',
@@ -86,7 +86,7 @@ export const ELEMENT_TYPES = {
 
   'toggle-switch': {
     id: 'toggle-switch',
-    span: [1, 1],
+    span: [3, 2],
     resizable: false,
     label: 'Toggle switch',
     description: 'Latching lever with two positions.',
@@ -98,7 +98,7 @@ export const ELEMENT_TYPES = {
 
   joystick: {
     id: 'joystick',
-    span: [1, 1],
+    span: [4, 4],
     resizable: false,
     label: 'Joystick',
     description: 'Stick tilting around a pivot above the base.',
@@ -121,7 +121,7 @@ export const ELEMENT_TYPES = {
 
   'display-screen': {
     id: 'display-screen',
-    span: [2, 2],
+    span: [7, 5],
     resizable: true,
     label: 'Display',
     description: 'Small screen. The surface can take a texture later.',
@@ -133,7 +133,7 @@ export const ELEMENT_TYPES = {
 
   'default-placeholder': {
     id: 'default-placeholder',
-    span: [1, 1],
+    span: [4, 4],
     resizable: false,
     label: 'Unknown element',
     description: 'Stand-in for an element whose type is not known yet.',

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -53,7 +53,7 @@ class Database:
         return self._connection
 
     @contextmanager
-    def cursor(self) -> Iterator[sqlite3.Cursor]:
+    def cursor(self) -> Generator[sqlite3.Cursor]:
         """A cursor in a transaction: committed on success, rolled back on error.
 
         Every repository goes through here, so no caller has to remember to

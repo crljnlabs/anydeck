@@ -9,7 +9,9 @@ import { elementType } from '../DeviceElement/element-types'
  * "columns of equal width" only holds while every element is the same size,
  * which stops being true as soon as a display or a fader is on the board.
  *
- * The footprint of a type lives in `element-types.js` as `span: [cols, rows]`.
+ * The footprint of a type lives in `element-types.js` as `span: [cols, rows]`,
+ * in cells of a quarter key each - see CELL_PITCH for why the cell is that
+ * small.
  *
  * On resizing: an element can only be dragged larger where the real hardware
  * varies in size, which is why the registry carries a `resizable` flag. A
@@ -19,8 +21,17 @@ import { elementType } from '../DeviceElement/element-types'
  * means picking the 2u variant, not scaling.
  */
 
-/** Real key matrix pitch. One grid cell is one key position. */
-export const CELL_PITCH = 0.019
+/**
+ * A quarter of a key position.
+ *
+ * Not one cell per key: elements differ in size by far more than a factor of
+ * two. An LED is about 5 mm and a key 19 mm, so on a key-sized grid the LED
+ * would either claim a whole key position or have to be drawn too large. A
+ * quarter-key cell is roughly LED-sized, which makes the LED the natural 1x1
+ * and a key a 4x4 - every element then rounds to something close to its real
+ * footprint instead of being forced up to the nearest key.
+ */
+export const CELL_PITCH = 0.019 / 4
 
 /** Cells are square in metres, so a grid stays proportional to the hardware. */
 export function cellSize(pitch = CELL_PITCH) {
@@ -35,7 +46,7 @@ export function cellSize(pitch = CELL_PITCH) {
  *
  *     gridLayout(['keycap-standard-1u', { typeId: 'display-screen', span: [3, 2] }])
  */
-export function gridLayout(entries, { columns = 4, pitch = CELL_PITCH } = {}) {
+export function gridLayout(entries, { columns = 16, pitch = CELL_PITCH } = {}) {
   const items = entries.map((entry) =>
     typeof entry === 'string' ? { typeId: entry } : entry,
   )

@@ -47,7 +47,7 @@ export function DeviceBoard({
   menu = null,
   onMenuSelect,
   interactive = true,
-  cellSize = 78,
+  cellSize = 20,   // pixels per cell; a 1u key is 4 cells, so 80 px
   padding = 26,
 }) {
   const [active, setActive] = useState(null)

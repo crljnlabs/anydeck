@@ -10,17 +10,23 @@ import getpass
 import os
 import sys
 
+from db import users as users_repository
 from models.user import User
 
 
 def current_user() -> User:
     username = _username()
-    display_name = _display_name(username)
-    return User(
-        username=username,
-        display_name=display_name,
-        initials=_initials(display_name),
-    )
+    return User(username=username, display_name=_display_name(username))
+
+
+def ensure_current_user() -> int:
+    """Make sure this operating-system user has a row, and return its id.
+
+    Everything stored per user hangs off this id. A shared install means a user
+    can appear at any time, so this runs on every start rather than once.
+    """
+    user = current_user()
+    return users_repository.ensure_user(user.username, user.display_name)
 
 
 def _username() -> str:
@@ -47,12 +53,3 @@ def _display_name(username: str) -> str:
             pass
 
     return os.environ.get("USERNAME") or username
-
-
-def _initials(display_name: str) -> str:
-    parts = [part for part in display_name.replace("-", " ").split() if part]
-    if not parts:
-        return "?"
-    if len(parts) == 1:
-        return parts[0][:2].upper()
-    return (parts[0][0] + parts[-1][0]).upper()

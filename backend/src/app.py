@@ -10,21 +10,48 @@ at the bottom for where they will hook in.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from api import api_router
+from api import settings as settings_api
+from api import user as user_api
+from db.schema import migrate
+from service import user as user_service
 from utils.paths import frontend_dir
 
 # The API must only be reachable from this machine - never bind to 0.0.0.0.
 HOST = "127.0.0.1"
 PORT = 8765
 
-app = FastAPI(title="anydeck", docs_url="/api/docs", openapi_url="/api/openapi.json")
-app.include_router(api_router)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Bring storage up to date before the first request touches it.
+
+    Both steps are cheap and idempotent: an up-to-date database costs one
+    PRAGMA read, and a user who already has a row costs one SELECT.
+    """
+    migrate()
+    user_service.ensure_current_user()
+    yield
+
+
+app = FastAPI(
+    title="anydeck",
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
+    lifespan=lifespan,
+)
+
+# The routing table lives here rather than inside the api package, so one file
+# answers "what does this backend expose".
+api = APIRouter(prefix="/api")
+api.include_router(settings_api.router)
+api.include_router(user_api.router)
+app.include_router(api)
 
 
 def _mount_frontend(application: FastAPI, directory: Path) -> None:

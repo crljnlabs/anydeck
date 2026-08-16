@@ -8,7 +8,7 @@ import './styles/HomePage.scss'
 preloadElementModels()
 
 // A macropad with elements of genuinely different footprints, so the grid has
-// something to do: the display takes a 2x2 block, the fader three cells.
+// something to do: a key is 4x4 cells, an LED 1x1, the display a 7x5 block.
 const DEVICE = gridLayout(
   [
     'keycap-standard-1u',
@@ -23,7 +23,7 @@ const DEVICE = gridLayout(
     'keycap-standard-1u',
     'keycap-standard-1u',
   ],
-  { columns: 4 },
+  { columns: 16 },   // four key positions wide
 )
 
 /** Scratch page: whatever is being tried out at the moment lives here. */

@@ -5,7 +5,6 @@ import {
   accentColor,
   applyAppearance,
   elementPalette,
-  resolveTheme,
 } from '../../lib/theme/appearance'
 import { DEFAULT_LANGUAGE, translate } from '../../lib/i18n'
 
@@ -70,7 +69,10 @@ export function SettingsProvider({ children }) {
   }, [])
 
   const value = useMemo(() => {
-    const resolvedTheme = resolveTheme(settings.theme)
+    // Resolved from state rather than by reading the media query in here, so
+    // the dependency on the OS setting is visible instead of hidden in a call.
+    const resolvedTheme =
+      settings.theme === 'system' ? (systemDark ? 'dark' : 'light') : settings.theme
     return {
       ...settings,
       loaded,
@@ -81,8 +83,6 @@ export function SettingsProvider({ children }) {
       update,
       t: (key) => translate(settings.language, key),
     }
-    // systemDark is not read directly - resolveTheme reads the media query -
-    // but it has to invalidate this, otherwise `system` never re-resolves.
   }, [settings, loaded, systemDark, update])
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
