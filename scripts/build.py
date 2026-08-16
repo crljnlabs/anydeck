@@ -31,6 +31,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -93,6 +94,9 @@ def package_macos(bundle: Path, version: str, target: Path) -> list[Path]:
         str(dmg),
     ])
 
+    # The copy inside the staging folder is a full application as far as the
+    # system is concerned, and it registers itself the moment it is written.
+    unregister_bundle(staging / bundle.name)
     shutil.rmtree(staging, ignore_errors=True)
     return [dmg]
 
@@ -192,6 +196,25 @@ def _make_archive(bundle: Path, base_name: Path, archive_format: str) -> Path:
     return Path(archive)
 
 
+LSREGISTER = Path(
+    "/System/Library/Frameworks/CoreServices.framework/Frameworks"
+    "/LaunchServices.framework/Support/lsregister"
+)
+
+
+def unregister_bundle(bundle: Path) -> None:
+    """Take a macOS bundle back out of the list of known applications.
+
+    Deleting the bundle alone does not do this: the entry survives, so the app
+    keeps turning up in search and in "open with" long after the directory is
+    gone. Best effort - a failure here costs a stale entry, not a build.
+    """
+    if common.platform_key() != "macos" or not LSREGISTER.exists():
+        return
+    subprocess.run([str(LSREGISTER), "-u", str(bundle)], check=False,
+                   capture_output=True)
+
+
 def write_checksums(target: Path, artifacts: list[Path]) -> Path:
     lines = [f"{common.sha256(artifact)}  {artifact.name}" for artifact in artifacts]
     checksums = target / "SHA256SUMS.txt"
@@ -226,6 +249,8 @@ def main() -> None:
                         help="non-interactive mode for CI (requires --version)")
     parser.add_argument("--skip-frontend", action="store_true",
                         help="reuse the existing frontend/dist instead of rebuilding it")
+    parser.add_argument("--keep-bundle", action="store_true",
+                        help="keep the unpackaged bundle in build/app after the installer is written")
     args = parser.parse_args()
 
     version = args.version
@@ -254,6 +279,15 @@ def main() -> None:
 
     write_checksums(target, artifacts)
     write_manifest(target, version, artifacts)
+
+    # The installer now holds everything the bundle held, and a bundle left
+    # lying around is a second installed-looking copy of the app: the operating
+    # system finds it, offers it in search next to the real one, and half the
+    # time it is the one that gets started. Asking the index to skip the
+    # directory is not enough, because what is already recorded stays recorded.
+    if not args.keep_bundle:
+        unregister_bundle(bundle)
+        shutil.rmtree(common.DIST_DIR, ignore_errors=True)
 
     print()
     common.info(f"Release {version} in {target.relative_to(common.PROJECT_DIR)}")

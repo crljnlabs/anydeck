@@ -1,18 +1,35 @@
 // Layout frame: fixed header, collapsible sidebar, scrolling content.
 //
-// The collapsed width is wide enough for an icon and its focus ring; the
-// expanded width is driven by the longest navigation label, not measured, so a
-// longer translation does not clip.
+// The expanded width is driven by the longest navigation label, not measured,
+// so a longer translation does not clip. Everything else here follows from one
+// idea: the logo and the navigation icons stand on the same vertical line, in
+// both states, and that line is the middle of the collapsed rail. Nothing then
+// moves sideways when the rail opens or closes - the label is simply covered by
+// the narrowing rail and uncovered again, which is the whole animation.
+
+@use 'sass:math';
 
 $sidebar-expanded: 208px;
-
-// Wide enough for the logo at full size plus air on both sides. The rail is
-// sized to fit its contents - the contents are never trimmed to fit the rail,
-// which is how the logo ended up clipped.
-$logo-size: 56px;
-$rail-padding: 10px;
-$sidebar-collapsed: $logo-size + 2 * $rail-padding;
 $header-height: 84px;
+$logo-size: 56px;
+$icon-size: 26px;
+
+// The air above and below the logo in the header. Reused as the air to its
+// left and right, which makes the logo's cell square and gives the collapsed
+// rail its width. The rail is sized to fit its contents - the contents are
+// never trimmed to fit the rail, which is how the logo ended up clipped.
+$logo-inset: math.div($header-height - $logo-size, 2); // 14px
+$sidebar-collapsed: $logo-size + 2 * $logo-inset; // 84px, the same square
+
+// Where a navigation icon starts, measured from the edge of the rail, so that
+// its middle lands on the middle of the rail: (84 - 26) / 2 = 29px.
+$icon-inset: math.div($sidebar-collapsed - $icon-size, 2);
+
+// How long the rail takes to open and close. A label is hidden outright when
+// that is over, never before: what is left of it at the end is the sliver that
+// fits in the padding the rail keeps around its icons, and cutting it any
+// earlier is the fade that made the icons look like they were moving.
+$collapse-time: 180ms;
 
 .app-shell {
   --sidebar-width: #{$sidebar-expanded};
@@ -33,7 +50,10 @@ $header-height: 84px;
   display: flex;
   align-items: center;
   gap: 16px;
-  padding-inline: 12px 16px;
+  // No padding on the leading edge: the brand block sits directly above the
+  // sidebar and has to line up with it exactly. Anything here would offset the
+  // logo from the icons below by that amount.
+  padding-inline: 0 16px;
   border-block-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
   background: light-dark(#ffffff, #16181d);
 }
@@ -46,18 +66,12 @@ $header-height: 84px;
   // Tight, so the logo and the word read as one: the A on the keycap is the
   // first letter of the name, not a picture standing next to it.
   gap: 1px;
-  padding-inline-start: $rail-padding;
+  // The one inset that decides everything. Collapsed, the rail is exactly this
+  // much wider than the logo on either side, so the logo is already centred -
+  // there is nothing to re-align, and the logo therefore never moves.
+  padding-inline-start: $logo-inset;
   overflow: hidden;
-
-  .app-shell[data-collapsed='true'] & {
-    // Centred in the rail rather than pinned to its left edge, and with the
-    // same room on both sides the icons below get. The gap goes too: a hidden
-    // label still leaves its gap behind, which pushes the logo off centre.
-    padding-inline: $rail-padding;
-    justify-content: center;
-    gap: 0;
-  }
-  transition: inline-size 180ms ease;
+  transition: inline-size $collapse-time ease;
 
   // The logo must never be squeezed. It is a flex item next to a nowrap label,
   // so without this the label wins the space fight and the logo is shrunk to
@@ -74,18 +88,26 @@ $header-height: 84px;
   letter-spacing: 0.005em;
   white-space: nowrap;
   color: light-dark(#111318, #e5e7eb);
+}
 
-  // Fades rather than unmounting, so the sidebar animation has something to
-  // slide against instead of the text vanishing a frame early.
-  transition: opacity 120ms ease;
+// Both labels - the brand name and the navigation ones - behave the same way:
+// they keep their full width and are cut off by the rail closing over them.
+// Fading them first, or dropping them to zero width, made the logo and the
+// icons slide into place before the rail had finished, which is two movements
+// where there should be one.
+.app-brand-name,
+.app-sidebar button span {
+  flex: none;
+  opacity: 1;
+  // Nothing on the way out until the rail has arrived; on the way back the
+  // label is there from the first frame, so it is revealed rather than lit up.
+  transition: opacity 0s;
+}
 
-  .app-shell[data-collapsed='true'] & {
-    opacity: 0;
-    // Takes no room either - invisible is not the same as gone, and the space
-    // it kept was what pushed the logo to one side.
-    inline-size: 0;
-    pointer-events: none;
-  }
+.app-shell[data-collapsed='true'] .app-brand-name,
+.app-shell[data-collapsed='true'] .app-sidebar button span {
+  opacity: 0;
+  transition-delay: $collapse-time;
 }
 
 .app-body {
@@ -99,11 +121,11 @@ $header-height: 84px;
   flex: none;
   display: flex;
   flex-direction: column;
-  padding: 10px $rail-padding;
+  padding: 10px $logo-inset;
   gap: 2px;
   border-inline-end: 1px solid color-mix(in oklab, currentColor 12%, transparent);
   background: light-dark(#fbfbfc, #16181d);
-  transition: inline-size 180ms ease;
+  transition: inline-size $collapse-time ease;
   overflow: hidden;
 
   ul {
@@ -121,7 +143,11 @@ $header-height: 84px;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 10px;
+    // The icon's own inset, minus what the rail already contributes, so the
+    // icon starts at $icon-inset from the edge of the rail and its middle sits
+    // on the rail's middle. Collapsed, the same amount is left over on the
+    // right, so the icon is centred without being re-centred.
+    padding: 9px ($icon-inset - $logo-inset);
     border: 0;
     border-radius: 8px;
     font: inherit;
@@ -136,14 +162,9 @@ $header-height: 84px;
     svg {
       // One size in both states, so an icon never jumps or resizes when the
       // rail opens and closes.
-      inline-size: 26px;
-      block-size: 26px;
+      inline-size: $icon-size;
+      block-size: $icon-size;
       flex: none;
-    }
-
-    span {
-      opacity: 1;
-      transition: opacity 120ms ease;
     }
 
     &:hover {
@@ -167,18 +188,8 @@ $header-height: 84px;
     }
   }
 
-  // Collapsed, the icon is all that is left, so it sits in the middle of the
-  // rail. Same size as before - only the label's space goes away.
-  .app-shell[data-collapsed='true'] & button {
-    justify-content: center;
-    padding-inline: 0;
-    gap: 0;
-  }
-
-  .app-shell[data-collapsed='true'] & button span {
-    opacity: 0;
-    inline-size: 0;
-  }
+  // Nothing to change when collapsed: the icon is already where it belongs,
+  // and the label is already clipped by the button's own overflow.
 }
 
 .app-sidebar-toggle {
@@ -368,9 +379,12 @@ $header-height: 84px;
 
 @media (prefers-reduced-motion: reduce) {
   .app-sidebar,
-  .app-brand,
-  .app-brand-name,
-  .app-sidebar button span {
+  .app-brand {
     transition-duration: 1ms;
+  }
+
+  .app-shell[data-collapsed='true'] .app-brand-name,
+  .app-shell[data-collapsed='true'] .app-sidebar button span {
+    transition-delay: 0s;
   }
 }
