@@ -7,6 +7,7 @@ separate process at all.
 
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
 
@@ -17,6 +18,8 @@ from utils.launch import self_command
 # is set to the vite server instead, which is the only way to get hot reloading
 # inside the real window - see scripts/dev.py --app.
 DEFAULT_URL = os.environ.get("ANYDECK_WINDOW_URL", f"http://{HOST}:{PORT}/")
+
+log = logging.getLogger("anydeck.window")
 
 _process: subprocess.Popen | None = None
 
@@ -38,11 +41,9 @@ def open() -> None:  # noqa: A001 - the verb is the clearest name here
         _send("show")
         return
 
-    _process = subprocess.Popen(
-        self_command("--window", DEFAULT_URL),
-        stdin=subprocess.PIPE,
-        text=True,
-    )
+    command = self_command("--window", DEFAULT_URL)
+    log.info("opening a window: %s", " ".join(command))
+    _process = subprocess.Popen(command, stdin=subprocess.PIPE, text=True)
 
 
 def close() -> None:

@@ -6,7 +6,7 @@
 
 $sidebar-expanded: 208px;
 $sidebar-collapsed: 60px;
-$header-height: 76px;
+$header-height: 84px;
 
 .app-shell {
   --sidebar-width: #{$sidebar-expanded};
@@ -54,9 +54,9 @@ $header-height: 76px;
 }
 
 .app-brand-name {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.005em;
   white-space: nowrap;
   color: light-dark(#111318, #e5e7eb);
 

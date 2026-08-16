@@ -60,7 +60,7 @@ export function AppShell({ page, onNavigate, children }) {
           {/* The logo follows the app's own accent and theme - it was the one
               thing still showing a colour the user had not chosen. */}
           <AnydeckIcon
-            size={46}
+            size={56}
             accent={accentColor}
             surface={theme === 'system' ? 'auto' : theme}
           />

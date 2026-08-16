@@ -23,7 +23,7 @@ from __future__ import annotations
 import sys
 import threading
 
-TITLE = "anydeck"
+TITLE = "Anydeck"
 
 _window = None
 

@@ -25,6 +25,7 @@ that appears to do nothing when double-clicked is a broken program.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 import urllib.error
 import urllib.request
@@ -32,6 +33,9 @@ import urllib.request
 from app import HOST, PORT
 from runtime import listener, server, tray, window
 from service import window as window_service
+from utils import logging as anydeck_logging
+
+log = logging.getLogger("anydeck.main")
 
 
 def hand_over_to_running_instance() -> bool:
@@ -58,6 +62,7 @@ def hand_over_to_running_instance() -> bool:
 
 
 def run_background(*, open_window_now: bool) -> None:
+    log.info("background starting")
     listener.start()
     server.start()
 
@@ -75,6 +80,7 @@ def run_background(*, open_window_now: bool) -> None:
     finally:
         # After the loop has ended, so this runs on the main thread with nothing
         # else competing for it.
+        log.info("shutting down")
         window.close()
         listener.stop()
         server.stop()
@@ -96,12 +102,17 @@ def main() -> None:
 
     if args.window:
         # A window and nothing else: no tray, no server, no listener.
+        anydeck_logging.setup("window")
         from runtime import window_process
 
         window_process.run(args.window)
+        log.info("window closed")
         return
 
+    anydeck_logging.setup("background")
+
     if hand_over_to_running_instance():
+        log.info("handed over to the instance already running")
         return
 
     run_background(open_window_now=not args.background)

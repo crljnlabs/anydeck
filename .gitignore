@@ -219,10 +219,10 @@ __marimo__/
 
 # --- anydeck ---------------------------------------------------------------
 
-# Packaged installers written by scripts/build.py. Installers are 40-100 MB per
-# platform and version, so they are distributed as GitHub release assets
-# instead of being tracked here.
-release/
+# Everything scripts/build.py produces: the assembled app, PyInstaller scratch
+# and the installers. Installers are 40-100 MB per platform and version, so they
+# are distributed as GitHub release assets rather than tracked here.
+build/
 
 # Node
 node_modules/

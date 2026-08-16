@@ -18,7 +18,7 @@ from runtime import window
 from service import autostart as autostart_service
 from utils.paths import icons_dir
 
-APP_NAME = "anydeck"
+APP_NAME = "Anydeck"
 
 # The menu bar renders around 22 px; 64 gives the backend room to downscale
 # cleanly on a Retina display without us shipping a second file.
