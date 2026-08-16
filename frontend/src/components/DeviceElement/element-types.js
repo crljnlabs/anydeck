@@ -52,6 +52,16 @@ export const ELEMENT_TYPES = {
     motion: { kind: 'move', mode: 'bounce', axis: 'y', amount: -0.0035, duration: 130 },
   },
 
+  'keycap-standard-6-25u': {
+    id: 'keycap-standard-6-25u',
+    span: [25, 4],
+    resizable: false,
+    label: 'Key 6.25u',
+    description: 'Spacebar-width key.',
+    part: 'Cap',
+    motion: { kind: 'move', mode: 'bounce', axis: 'y', amount: -0.0035, duration: 130 },
+  },
+
   'rotary-encoder': {
     id: 'rotary-encoder',
     span: [4, 4],

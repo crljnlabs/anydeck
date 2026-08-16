@@ -5,21 +5,15 @@ import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
 import { ElementLights } from '../DeviceElement/ElementLights'
+import {
+  ELEMENT_HEIGHT,
+  ELEVATION,
+  SCENE_OFFSET,
+  viewCamera,
+} from '../DeviceElement/element-view'
 import { CELL_PITCH, gridExtent } from './element-layout'
 import './device-board.scss'
 
-// Viewing angle above the board. Steep enough that every element is readable
-// on its own and no row hides behind the one in front of it - at a shallow
-// angle a dense grid turns into a wall of overlapping caps.
-const ELEVATION = (55 * Math.PI) / 180
-
-// Tallest element in the set, roughly - a knob at 21 mm. Used to reserve
-// vertical room so nothing is cropped at the top.
-const ELEMENT_HEIGHT = 0.022
-
-// Elements stand on y = 0, so the scene is dropped by half an element to sit
-// in the middle of the view rather than in its upper half.
-const SCENE_OFFSET = [0, -ELEMENT_HEIGHT / 2, 0]
 
 /**
  * A whole device on one shared canvas.
@@ -90,12 +84,7 @@ export function DeviceBoard({
       >
         <Canvas
           orthographic
-          camera={{
-            zoom,
-            position: [0, Math.sin(ELEVATION), Math.cos(ELEVATION)],
-            near: -10,
-            far: 10,
-          }}
+          camera={viewCamera(zoom)}
           dpr={[1, 2]}
           gl={{ antialias: true }}
         >
@@ -165,7 +154,7 @@ function BoardSlot({ element, accent, housing, interactive, selectable, onOpen }
   )
 }
 
-const MIN_RING_RADIUS = 62
+const MIN_RING_RADIUS = 46
 const RING_CLEARANCE = 34   // half an item button plus a little air
 
 /**
@@ -206,11 +195,18 @@ function ringFor(object, camera, gl) {
     maxY = Math.max(maxY, y)
   }
 
-  const reach = Math.max(maxX - minX, maxY - minY) / 2 + RING_CLEARANCE
-
+  // An ellipse around the element, not a circle around its longest side. A
+  // circle has to clear the widest dimension in every direction, so on a fader
+  // the entry directly above ends up a fader's width away for no reason. Each
+  // axis gets its own reach, and every entry then sits the same short distance
+  // from the shape whichever way it lies - which also means a rotated fader
+  // needs no special case.
   return {
     anchor: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
-    radius: Math.max(MIN_RING_RADIUS, reach),
+    radius: {
+      x: Math.max(MIN_RING_RADIUS, (maxX - minX) / 2 + RING_CLEARANCE),
+      y: Math.max(MIN_RING_RADIUS, (maxY - minY) / 2 + RING_CLEARANCE),
+    },
   }
 }
 

@@ -1,5 +1,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { viewCamera } from '../DeviceElement/element-view'
+import { FitCamera } from './FitCamera'
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
@@ -7,17 +9,10 @@ import { ElementLights } from '../DeviceElement/ElementLights'
 import { elementType } from '../DeviceElement/element-types'
 import './element-card.scss'
 
-// The models are in metres, so a 1u key is 0.018 across. The default near
-// plane of 0.1 would clip the whole scene away - hence the tiny near/far.
-//
-// The elevation is deliberately low. On a key or a knob the moving part is
-// wider than the housing it sits on - a real keycap overhangs its switch - so
-// a steeper angle hides the housing completely behind the cap.
-const CAMERA = { position: [0.038, 0.032, 0.054], fov: 35, near: 0.001, far: 2 }
-
-// Elements stand on y = 0 and are at most ~18 mm tall, so lifting the scene by
-// half that centres it on the camera's default target.
-const SCENE_OFFSET = [0, -0.008, 0]
+// Each card fits its own element rather than sharing one scale across the
+// palette. A palette spans an LED at 10 mm and a 6.25u key at 119 mm; at a
+// shared scale one of the two is always unusable. Relative size is what the
+// board is for - this is a list of what exists.
 
 /**
  * An element on its own small canvas, in a DOM box that can be clicked.
@@ -52,6 +47,7 @@ export function ElementCard({
   // has to thread them through by hand.
   const { element } = useSettings()
   const boxRef = useRef(null)
+  const sceneRef = useRef(null)
   const playRef = useRef(null)
   const [anchor, setAnchor] = useState(null)
 
@@ -93,10 +89,15 @@ export function ElementCard({
         {...rest}
       >
         <span className="element-card-stage">
-          <Canvas camera={CAMERA} dpr={[1, 2]} gl={{ antialias: true }}>
+          <Canvas
+            orthographic
+            camera={viewCamera(1)}
+            dpr={[1, 2]}
+            gl={{ antialias: true }}
+          >
             <ElementLights />
             <Suspense fallback={null}>
-              <group position={SCENE_OFFSET}>
+              <group ref={sceneRef}>
                 <DeviceElement
                   typeId={type.id}
                   accent={accent ?? element.accent}
@@ -104,6 +105,8 @@ export function ElementCard({
                   playRef={playRef}
                 />
               </group>
+              {/* Inside the boundary, so it runs once the model is there. */}
+              <FitCamera target={sceneRef} />
             </Suspense>
           </Canvas>
         </span>

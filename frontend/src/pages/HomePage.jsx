@@ -20,6 +20,7 @@ const DEVICE = gridLayout(
     'led-indicator',
     'slider-fader',
     'display-screen',
+    'keycap-standard-6-25u',
     'keycap-standard-1u',
     'keycap-standard-1u',
   ],

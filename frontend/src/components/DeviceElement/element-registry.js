@@ -2,6 +2,7 @@ import { useGLTF } from '@react-three/drei'
 import {
   Keycap1u,
   Keycap2u,
+  Keycap625u,
   RotaryEncoder,
   Potentiometer,
   SliderFader,
@@ -21,6 +22,7 @@ import { ELEMENT_TYPE_IDS, modelUrl } from './element-types'
 export const ELEMENT_COMPONENTS = {
   'keycap-standard-1u': Keycap1u,
   'keycap-standard-2u': Keycap2u,
+  'keycap-standard-6-25u': Keycap625u,
   'rotary-encoder': RotaryEncoder,
   potentiometer: Potentiometer,
   'slider-fader': SliderFader,

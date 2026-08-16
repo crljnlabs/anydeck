@@ -46,7 +46,10 @@ export function cellSize(pitch = CELL_PITCH) {
  *
  *     gridLayout(['keycap-standard-1u', { typeId: 'display-screen', span: [3, 2] }])
  */
-export function gridLayout(entries, { columns = 16, pitch = CELL_PITCH } = {}) {
+export function gridLayout(
+  entries,
+  { columns = 16, pitch = CELL_PITCH, gap = 1 } = {},
+) {
   const items = entries.map((entry) =>
     typeof entry === 'string' ? { typeId: entry } : entry,
   )
@@ -84,14 +87,18 @@ export function gridLayout(entries, { columns = 16, pitch = CELL_PITCH } = {}) {
 
     if (cursor + width > columns && cursor > 0) {
       centreShelf()
-      shelfTop += shelfHeight
+      shelfTop += shelfHeight + gap
       cursor = 0
       shelfHeight = 0
       shelfStart = placed.length
     }
 
     placed.push(entry(item, index, type, [width, height], [cursor, shelfTop]))
-    cursor += width
+    // A footprint is the element itself, so without a gap neighbours touch.
+    // A key already carries its 1 mm of key-matrix clearance inside its four
+    // cells, but a 1x1 LED carries none and ends up glued to whatever is next
+    // to it.
+    cursor += width + gap
     shelfHeight = Math.max(shelfHeight, height)
   })
 

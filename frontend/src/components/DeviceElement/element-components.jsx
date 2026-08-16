@@ -24,6 +24,10 @@ export function Keycap2u(props) {
   return <ElementCard typeId="keycap-standard-2u" {...props} />
 }
 
+export function Keycap625u(props) {
+  return <ElementCard typeId="keycap-standard-6-25u" {...props} />
+}
+
 export function RotaryEncoder(props) {
   return <ElementCard typeId="rotary-encoder" {...props} />
 }

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './radial-menu.css'
 
@@ -23,19 +23,27 @@ const EDGE_PADDING = 10
 export function RadialMenu({
   anchor,
   items,
+  // A number for a circle, or {x, y} to hug an element that is much wider than
+  // it is tall - see DeviceBoard for why that matters.
   radius = 62,
   label = 'Element actions',
   onSelect,
   onClose,
 }) {
   const ringRef = useRef(null)
+  // Memoised so the effect below depends on a stable object rather than on a
+  // fresh one every render.
+  const reach = useMemo(
+    () => (typeof radius === 'number' ? { x: radius, y: radius } : radius),
+    [radius],
+  )
   const [angles, setAngles] = useState(() => fullCircle(items.length))
 
   // Placement depends on the viewport, so it can only be decided on the
   // client, after the anchor is known.
   useLayoutEffect(() => {
-    setAngles(layout(anchor, items.length, radius))
-  }, [anchor, items.length, radius])
+    setAngles(layout(anchor, items.length, reach))
+  }, [anchor, items.length, reach])
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -85,8 +93,8 @@ export function RadialMenu({
               title={item.label}
               aria-label={item.label}
               style={{
-                '--x': `${Math.cos(angle) * radius}px`,
-                '--y': `${Math.sin(angle) * radius}px`,
+                '--x': `${Math.cos(angle) * reach.x}px`,
+                '--y': `${Math.sin(angle) * reach.y}px`,
                 '--delay': `${index * 22}ms`,
               }}
               onClick={() => choose(item)}
@@ -115,13 +123,14 @@ function fullCircle(count) {
  * are folded into a half circle opening back towards the middle of the
  * viewport - the direction that is guaranteed to have space.
  */
-function layout(anchor, count, radius) {
-  const reach = radius + ITEM_RADIUS + EDGE_PADDING
+function layout(anchor, count, reach) {
+  const spreadX = reach.x + ITEM_RADIUS + EDGE_PADDING
+  const spreadY = reach.y + ITEM_RADIUS + EDGE_PADDING
   const fits =
-    anchor.x - reach > 0 &&
-    anchor.y - reach > 0 &&
-    anchor.x + reach < window.innerWidth &&
-    anchor.y + reach < window.innerHeight
+    anchor.x - spreadX > 0 &&
+    anchor.y - spreadY > 0 &&
+    anchor.x + spreadX < window.innerWidth &&
+    anchor.y + spreadY < window.innerHeight
 
   if (fits) return fullCircle(count)
 

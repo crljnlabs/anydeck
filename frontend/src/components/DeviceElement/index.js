@@ -10,7 +10,7 @@ export {
   modelUrl,
 } from './element-types'
 export {
-  Keycap1u, Keycap2u, RotaryEncoder, Potentiometer, SliderFader,
+  Keycap1u, Keycap2u, Keycap625u, RotaryEncoder, Potentiometer, SliderFader,
   ToggleSwitch, Joystick, LedIndicator, DisplayScreen, UnknownElement,
 } from './element-components'
 export { ELEMENT_COMPONENTS, elementComponent, preloadElementModels } from './element-registry'
