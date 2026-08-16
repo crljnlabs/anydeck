@@ -34,9 +34,8 @@
   }
 }
 
+// Sized inline by the component: a card is as wide as the element it holds.
 .element-card-stage {
-  inline-size: var(--card-size);
-  block-size: var(--card-size);
   display: block;
 
   canvas {

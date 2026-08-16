@@ -19,10 +19,13 @@
   }
 }
 
+// Cards differ in width now, so they flow rather than sitting in equal
+// columns - a spacebar is genuinely six times a single key.
 .element-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .home-page section h2 {

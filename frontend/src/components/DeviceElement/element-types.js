@@ -34,6 +34,7 @@ const MODEL_BASE = `${import.meta.env.BASE_URL}models/`
 export const ELEMENT_TYPES = {
   'keycap-standard-1u': {
     id: 'keycap-standard-1u',
+    size: [0.018, 0.0185, 0.018],
     span: [4, 4],
     resizable: false,
     label: 'Key 1u',
@@ -44,6 +45,7 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-2u': {
     id: 'keycap-standard-2u',
+    size: [0.0371, 0.0185, 0.018],
     span: [8, 4],
     resizable: false,
     label: 'Key 2u',
@@ -54,6 +56,7 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-6-25u': {
     id: 'keycap-standard-6-25u',
+    size: [0.118, 0.0185, 0.018],
     span: [25, 4],
     resizable: false,
     label: 'Key 6.25u',
@@ -64,6 +67,7 @@ export const ELEMENT_TYPES = {
 
   'rotary-encoder': {
     id: 'rotary-encoder',
+    size: [0.0158, 0.0215, 0.0156],
     span: [4, 4],
     resizable: false,
     label: 'Rotary encoder',
@@ -86,6 +90,7 @@ export const ELEMENT_TYPES = {
 
   'slider-fader': {
     id: 'slider-fader',
+    size: [0.0455, 0.014, 0.0095],
     span: [10, 2],
     resizable: true,
     label: 'Slider',
@@ -96,6 +101,7 @@ export const ELEMENT_TYPES = {
 
   'toggle-switch': {
     id: 'toggle-switch',
+    size: [0.013, 0.023, 0.008],
     span: [3, 2],
     resizable: false,
     label: 'Toggle switch',
@@ -118,6 +124,7 @@ export const ELEMENT_TYPES = {
 
   'led-indicator': {
     id: 'led-indicator',
+    size: [0.01, 0.009, 0.01],
     span: [1, 1],
     resizable: false,
     label: 'LED',
@@ -131,6 +138,7 @@ export const ELEMENT_TYPES = {
 
   'display-screen': {
     id: 'display-screen',
+    size: [0.03, 0.0035, 0.022],
     span: [7, 5],
     resizable: true,
     label: 'Display',
@@ -143,6 +151,7 @@ export const ELEMENT_TYPES = {
 
   'default-placeholder': {
     id: 'default-placeholder',
+    size: [0.018, 0.012, 0.018],
     span: [4, 4],
     resizable: false,
     label: 'Unknown element',
@@ -151,6 +160,17 @@ export const ELEMENT_TYPES = {
     motion: { kind: 'pulse', mode: 'bounce', amount: 0.05, duration: 220 },
   },
 }
+
+/**
+ * `size` is the model's real bounding box in metres, measured from the export
+ * rather than assumed. It is not the same thing as `span`: a span is rounded up
+ * to whole grid cells and says how much room an element claims on a board, a
+ * size says how large it actually is. An LED claims one 4.75 mm cell and is a
+ * 10 mm blob; the two numbers cannot be derived from each other.
+ *
+ * Every model is centred on x and z, so only half the height is needed to
+ * centre one in a view.
+ */
 
 /** Material carrying the user-facing colour in every model that has one. */
 export const ACCENT_MATERIAL = 'AccentMaterial'

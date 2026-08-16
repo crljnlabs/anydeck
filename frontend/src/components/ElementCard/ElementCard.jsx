@@ -1,7 +1,10 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { viewCamera } from '../DeviceElement/element-view'
-import { FitCamera } from './FitCamera'
+import {
+  PALETTE_SCALE,
+  screenHeight,
+  viewCamera,
+} from '../DeviceElement/element-view'
 import { useSettings } from '../../contexts/settings'
 import { RadialMenu } from '../RadialMenu'
 import { DeviceElement } from '../DeviceElement'
@@ -9,10 +12,10 @@ import { ElementLights } from '../DeviceElement/ElementLights'
 import { elementType } from '../DeviceElement/element-types'
 import './element-card.scss'
 
-// Each card fits its own element rather than sharing one scale across the
-// palette. A palette spans an LED at 10 mm and a 6.25u key at 119 mm; at a
-// shared scale one of the two is always unusable. Relative size is what the
-// board is for - this is a list of what exists.
+// Room around the element inside its card, and the smallest a card may get so
+// a 10 mm LED still has something to click and a label to sit under.
+const CARD_PADDING = 26
+const MIN_CARD_WIDTH = 88
 
 /**
  * An element on its own small canvas, in a DOM box that can be clicked.
@@ -47,7 +50,16 @@ export function ElementCard({
   // has to thread them through by hand.
   const { element } = useSettings()
   const boxRef = useRef(null)
-  const sceneRef = useRef(null)
+
+  // One scale for the whole palette. The card grows with its element rather
+  // than the element shrinking into a fixed card - which is what made a 6.25u
+  // key's housing invisible while a 1u key's was plain to see.
+  const size = type.size ?? [0.018, 0.0185, 0.018]
+  const stageWidth = Math.max(
+    MIN_CARD_WIDTH,
+    Math.round(size[0] * PALETTE_SCALE) + CARD_PADDING * 2,
+  )
+  const stageHeight = Math.round(screenHeight(size) * PALETTE_SCALE) + CARD_PADDING * 2
   const playRef = useRef(null)
   const [anchor, setAnchor] = useState(null)
 
@@ -88,16 +100,21 @@ export function ElementCard({
         onClick={handleClick}
         {...rest}
       >
-        <span className="element-card-stage">
+        <span
+          className="element-card-stage"
+          style={{ inlineSize: `${stageWidth}px`, blockSize: `${stageHeight}px` }}
+        >
           <Canvas
             orthographic
-            camera={viewCamera(1)}
+            camera={viewCamera(PALETTE_SCALE)}
             dpr={[1, 2]}
             gl={{ antialias: true }}
           >
             <ElementLights />
             <Suspense fallback={null}>
-              <group ref={sceneRef}>
+              {/* Every model is centred on x and z and stands on y = 0, so
+                  half its height is all it takes to centre it. */}
+              <group position={[0, -size[1] / 2, 0]}>
                 <DeviceElement
                   typeId={type.id}
                   accent={accent ?? element.accent}
@@ -105,8 +122,6 @@ export function ElementCard({
                   playRef={playRef}
                 />
               </group>
-              {/* Inside the boundary, so it runs once the model is there. */}
-              <FitCamera target={sceneRef} />
             </Suspense>
           </Canvas>
         </span>
