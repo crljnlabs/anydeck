@@ -45,6 +45,24 @@ export function SettingsIcon(props) {
   )
 }
 
+export function DevicesIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+      <path d="M6.5 10h1M10 10h1M13.5 10h1M17 10h1M8 14h8" />
+    </Icon>
+  )
+}
+
+/** A bolt, matching the action entry in the radial menu. */
+export function ActionsIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z" />
+    </Icon>
+  )
+}
+
 export function SearchIcon(props) {
   return (
     <Icon {...props}>

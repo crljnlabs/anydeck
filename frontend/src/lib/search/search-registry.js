@@ -12,6 +12,7 @@
  *     registerSearchProvider({
  *       id: 'devices',
  *       group: 'Devices',
+ *       context: 'devices',        // optional: the screen this belongs to
  *       search: async (query) => [{ id, title, subtitle, run }],
  *     })
  *
@@ -37,20 +38,34 @@ export function searchProviders() {
  * One slow or broken provider must not stall the palette, so results are
  * collected with allSettled and failures are dropped.
  */
-export async function runSearch(query) {
+/** How far ahead a result from the screen you are on is placed. */
+const CONTEXT_BOOST = 100
+
+export async function runSearch(query, context) {
   const term = query.trim()
   if (!term) return []
 
   const answers = await Promise.allSettled(
     searchProviders().map(async (provider) => {
       const results = await provider.search(term)
-      return results.map((result) => ({ ...result, group: result.group ?? provider.group }))
+      // Results from whatever you are looking at come first. Searching for
+      // "volume" while editing a device almost certainly means that device's
+      // volume knob, not the settings entry that shares the word - and the
+      // provider knows which screen it belongs to, so the search box does not
+      // have to.
+      const boost = provider.context && provider.context === context ? CONTEXT_BOOST : 0
+      return results.map((result) => ({
+        ...result,
+        group: result.group ?? provider.group,
+        score: (result.score ?? 0) + boost,
+      }))
     }),
   )
 
   return answers
     .filter((answer) => answer.status === 'fulfilled')
     .flatMap((answer) => answer.value)
+    .sort((a, b) => b.score - a.score)
 }
 
 /** Case-insensitive substring match, the default for simple in-memory providers. */

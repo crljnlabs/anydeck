@@ -34,6 +34,8 @@ const MODEL_BASE = `${import.meta.env.BASE_URL}models/`
 export const ELEMENT_TYPES = {
   'keycap-standard-1u': {
     id: 'keycap-standard-1u',
+    kind: 'input',
+    triggers: ['press', 'release', 'hold'],
     size: [0.018, 0.0185, 0.018],
     span: [4, 4],
     resizable: false,
@@ -45,6 +47,8 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-2u': {
     id: 'keycap-standard-2u',
+    kind: 'input',
+    triggers: ['press', 'release', 'hold'],
     size: [0.0371, 0.0185, 0.018],
     span: [8, 4],
     resizable: false,
@@ -56,6 +60,8 @@ export const ELEMENT_TYPES = {
 
   'keycap-standard-6-25u': {
     id: 'keycap-standard-6-25u',
+    kind: 'input',
+    triggers: ['press', 'release', 'hold'],
     size: [0.118, 0.0185, 0.018],
     span: [25, 4],
     resizable: false,
@@ -67,6 +73,8 @@ export const ELEMENT_TYPES = {
 
   'rotary-encoder': {
     id: 'rotary-encoder',
+    kind: 'input',
+    triggers: ['turn-left', 'turn-right', 'press', 'release'],
     size: [0.0158, 0.0215, 0.0156],
     span: [4, 4],
     resizable: false,
@@ -80,6 +88,8 @@ export const ELEMENT_TYPES = {
 
   potentiometer: {
     id: 'potentiometer',
+    kind: 'input',
+    triggers: ['change'],
     span: [4, 4],
     resizable: false,
     label: 'Potentiometer',
@@ -90,6 +100,8 @@ export const ELEMENT_TYPES = {
 
   'slider-fader': {
     id: 'slider-fader',
+    kind: 'input',
+    triggers: ['change'],
     size: [0.0455, 0.014, 0.0095],
     span: [10, 2],
     resizable: true,
@@ -101,6 +113,8 @@ export const ELEMENT_TYPES = {
 
   'toggle-switch': {
     id: 'toggle-switch',
+    kind: 'input',
+    triggers: ['on', 'off'],
     size: [0.013, 0.023, 0.008],
     span: [3, 2],
     resizable: false,
@@ -114,6 +128,8 @@ export const ELEMENT_TYPES = {
 
   joystick: {
     id: 'joystick',
+    kind: 'input',
+    triggers: ['move', 'press'],
     span: [4, 4],
     resizable: false,
     label: 'Joystick',
@@ -124,6 +140,8 @@ export const ELEMENT_TYPES = {
 
   'led-indicator': {
     id: 'led-indicator',
+    kind: 'output',
+    triggers: [],
     size: [0.01, 0.009, 0.01],
     span: [1, 1],
     resizable: false,
@@ -138,6 +156,8 @@ export const ELEMENT_TYPES = {
 
   'display-screen': {
     id: 'display-screen',
+    kind: 'output',
+    triggers: [],
     size: [0.03, 0.0035, 0.022],
     span: [7, 5],
     resizable: true,
@@ -151,6 +171,8 @@ export const ELEMENT_TYPES = {
 
   'default-placeholder': {
     id: 'default-placeholder',
+    kind: 'input',
+    triggers: [],
     size: [0.018, 0.012, 0.018],
     span: [4, 4],
     resizable: false,
@@ -162,6 +184,11 @@ export const ELEMENT_TYPES = {
 }
 
 /**
+ * `kind` splits the set in two, and it matters for the data model: an input
+ * reports to the PC and can therefore have actions hung off it, while an output
+ * is driven by the PC and has state pushed to it. An LED fires no triggers - it
+ * is told when to light up. `triggers` lists what an input can report.
+ *
  * `size` is the model's real bounding box in metres, measured from the export
  * rather than assumed. It is not the same thing as `span`: a span is rounded up
  * to whole grid cells and says how much room an element claims on a board, a

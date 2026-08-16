@@ -4,11 +4,13 @@ import { useSettings } from '../../contexts/settings'
 import { registerSearchProvider, matches } from '../../lib/search/search-registry'
 import GlobalSearch from './GlobalSearch'
 import UserBadge from './UserBadge'
-import { HomeIcon, SettingsIcon, SidebarIcon } from './shell-icons'
+import { ActionsIcon, DevicesIcon, HomeIcon, SettingsIcon, SidebarIcon } from './shell-icons'
 import './app-shell.scss'
 
 const NAV = [
   { id: 'home', labelKey: 'nav.home', Icon: HomeIcon },
+  { id: 'devices', labelKey: 'nav.devices', Icon: DevicesIcon },
+  { id: 'actions', labelKey: 'nav.actions', Icon: ActionsIcon },
   { id: 'settings', labelKey: 'nav.settings', Icon: SettingsIcon },
 ]
 
@@ -23,7 +25,7 @@ const SIDEBAR_KEY = 'anydeck.sidebar.collapsed'
  * sync and no back button to honour. Should that change, this is the one place
  * that has to know.
  */
-export function AppShell({ page, onNavigate, children }) {
+export function AppShell({ route, onNavigate, children }) {
   const { accentColor, theme, t } = useSettings()
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_KEY) === 'true',
@@ -70,7 +72,7 @@ export function AppShell({ page, onNavigate, children }) {
           <span className="app-brand-name">{t('app.name')}</span>
         </div>
 
-        <GlobalSearch />
+        <GlobalSearch context={route.name} />
 
         <UserBadge />
       </header>
@@ -82,7 +84,7 @@ export function AppShell({ page, onNavigate, children }) {
               <li key={id}>
                 <button
                   type="button"
-                  data-active={page === id}
+                  data-active={route.name === id}
                   title={collapsed ? t(labelKey) : undefined}
                   onClick={() => onNavigate(id)}
                 >

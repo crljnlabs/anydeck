@@ -1,0 +1,72 @@
+.devices-page {
+  padding: 24px 28px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  > header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+
+    h1 { margin: 0; font-size: 22px; font-weight: 600; }
+    p { margin: 4px 0 0; font-size: 14px; color: color-mix(in oklab, currentColor 55%, transparent); }
+  }
+}
+
+.primary-action {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: light-dark(#ffffff, #111318);
+  background: var(--accent, #f97316);
+  cursor: pointer;
+
+  &:hover { filter: brightness(1.08); }
+}
+
+.devices-note {
+  margin: 0;
+  font-size: 13px;
+  color: color-mix(in oklab, currentColor 60%, transparent);
+}
+
+// Cards size themselves to the device they hold, so a wide deck reads as wide
+// instead of being squeezed into the same box as a six-key pad.
+.device-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.device-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 12px 14px;
+  border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  border-radius: 14px;
+  font: inherit;
+  color: inherit;
+  background: light-dark(#ffffff, #16181d);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 140ms ease;
+
+  &:hover { border-color: color-mix(in oklab, var(--accent, #f97316) 55%, transparent); }
+  &[data-connected='false'] { opacity: 0.62; }
+}
+
+.device-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  strong { font-size: 14px; font-weight: 600; }
+  small { font-size: 12px; color: color-mix(in oklab, currentColor 55%, transparent); }
+}

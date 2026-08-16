@@ -10,7 +10,7 @@ import { SearchIcon } from './shell-icons'
  * every feature registers into. Right now only the navigation is registered, so
  * the palette works end to end while there is still almost nothing to find.
  */
-export function GlobalSearch() {
+export function GlobalSearch({ context }) {
   const t = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -36,13 +36,13 @@ export function GlobalSearch() {
 
   useEffect(() => {
     let cancelled = false
-    runSearch(query).then((found) => {
+    runSearch(query, context).then((found) => {
       if (!cancelled) setResults(found)
     })
     return () => {
       cancelled = true
     }
-  }, [query])
+  }, [query, context])
 
   const grouped = groupByGroup(results)
 

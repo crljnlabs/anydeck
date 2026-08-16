@@ -1,0 +1,61 @@
+.context-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+.context-menu-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.context-menu {
+  position: fixed;
+  min-inline-size: 190px;
+  padding: 5px;
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  border-radius: 10px;
+  background: light-dark(#ffffff, #1c1f26);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.3);
+
+  hr {
+    margin: 4px 6px;
+    border: 0;
+    border-block-start: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+  }
+
+  button {
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    text-align: start;
+
+    small {
+      font-size: 11px;
+      color: color-mix(in oklab, currentColor 45%, transparent);
+    }
+
+    &:hover:not(:disabled) {
+      background: color-mix(in oklab, currentColor 10%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    &[data-tone='danger'] {
+      color: light-dark(#b91c1c, #f87171);
+    }
+  }
+}
