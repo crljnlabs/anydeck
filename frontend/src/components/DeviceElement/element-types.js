@@ -74,7 +74,7 @@ export const ELEMENT_TYPES = {
   'rotary-encoder': {
     id: 'rotary-encoder',
     kind: 'input',
-    triggers: ['turn-left', 'turn-right', 'press', 'release'],
+    triggers: ['turn-left', 'turn-right', 'press', 'release', 'hold'],
     size: [0.0158, 0.0215, 0.0156],
     span: [4, 4],
     resizable: false,
@@ -129,7 +129,7 @@ export const ELEMENT_TYPES = {
   joystick: {
     id: 'joystick',
     kind: 'input',
-    triggers: ['move', 'press'],
+    triggers: ['move', 'press', 'release', 'hold'],
     span: [4, 4],
     resizable: false,
     label: 'Joystick',

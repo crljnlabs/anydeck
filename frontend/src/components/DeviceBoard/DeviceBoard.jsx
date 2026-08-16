@@ -40,6 +40,7 @@ export function DeviceBoard({
   accent,
   housing,
   menu = null,
+  onSelect,
   onMenuSelect,
   interactive = true,
   cellSize = 20,   // pixels per cell; a 1u key is 4 cells, so 80 px
@@ -100,6 +101,7 @@ export function DeviceBoard({
                   interactive={interactive}
                   selectable={interactive && Boolean(menu?.length)}
                   onOpen={setActive}
+                  onSelect={onSelect}
                 />
               ))}
             </group>
@@ -121,7 +123,7 @@ export function DeviceBoard({
   )
 }
 
-function BoardSlot({ element, accent, housing, interactive, selectable, onOpen }) {
+function BoardSlot({ element, accent, housing, interactive, selectable, onOpen, onSelect }) {
   const groupRef = useRef(null)
   const playRef = useRef(null)
   const { camera, gl } = useThree()
@@ -131,6 +133,10 @@ function BoardSlot({ element, accent, housing, interactive, selectable, onOpen }
     // also hits whatever is behind it.
     event.stopPropagation()
     playRef.current?.()
+    // Selecting is separate from opening the ring: a click should already tell
+    // the rest of the screen which element you mean, without going through a
+    // menu first.
+    onSelect?.(element)
     if (selectable) onOpen({ key: element.key, ...ringFor(groupRef.current, camera, gl) })
   }
 

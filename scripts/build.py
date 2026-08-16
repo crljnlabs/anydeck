@@ -71,13 +71,26 @@ def run_pyinstaller(python: Path) -> Path:
 def package_macos(bundle: Path, version: str, target: Path) -> list[Path]:
     dmg = target / f"anydeck-{version}-macos-{common.arch_key()}.dmg"
     common.info(f"Creating {dmg.name}")
+
+    # The image gets the app AND a link to /Applications, because that link is
+    # the entire install instruction on macOS: open, drag across, done. Without
+    # it there is no way to install at all - the app can only be run from the
+    # mounted image, read-only, and every double-click on the .dmg mounts
+    # another copy of it.
+    staging = target / f"{dmg.stem}-contents"
+    common.clean_directory(staging)
+    shutil.copytree(bundle, staging / bundle.name, symlinks=True)
+    (staging / "Applications").symlink_to("/Applications")
+
     common.run([
         "hdiutil", "create",
-        "-volname", "anydeck",
-        "-srcfolder", str(bundle),
+        "-volname", common.APP_NAME,
+        "-srcfolder", str(staging),
         "-ov", "-format", "UDZO",
         str(dmg),
     ])
+
+    shutil.rmtree(staging, ignore_errors=True)
     return [dmg]
 
 

@@ -58,7 +58,7 @@ export function DevicesPage({ navigate }) {
           <h1>Devices</h1>
           <p>{MOCK_DEVICES.filter((d) => d.connected).length} connected</p>
         </div>
-        <button type="button" className="primary-action" onClick={() => setNote('Searching…')}>
+        <button type="button" className="primary-action" onClick={() => setNote('Searching for devices…')}>
           Search for devices
         </button>
       </header>
@@ -83,7 +83,7 @@ export function DevicesPage({ navigate }) {
           items={CARD_MENU}
           onSelect={(id) => {
             if (id === 'open') navigate('device', { id: menu.device.id })
-            else setNote(`${id} on ${menu.device.name} - not wired up yet`)
+            else setNote(null)
           }}
           onClose={() => setMenu(null)}
         />

@@ -5,7 +5,7 @@
 // longer translation does not clip.
 
 $sidebar-expanded: 208px;
-$sidebar-collapsed: 60px;
+$sidebar-collapsed: 68px;
 $header-height: 84px;
 
 .app-shell {
@@ -112,12 +112,14 @@ $header-height: 84px;
     background: transparent;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
     transition: background 140ms ease, color 140ms ease;
 
     svg {
-      inline-size: 20px;
-      block-size: 20px;
+      inline-size: 21px;
+      block-size: 21px;
       flex: none;
+      transition: inline-size 160ms ease, block-size 160ms ease;
     }
 
     span {
@@ -146,8 +148,21 @@ $header-height: 84px;
     }
   }
 
+  // Collapsed, the icon is the only thing left, so it carries the whole button
+  // and needs to be big enough to aim at.
+  .app-shell[data-collapsed='true'] & button {
+    justify-content: center;
+    padding-inline: 0;
+
+    svg {
+      inline-size: 26px;
+      block-size: 26px;
+    }
+  }
+
   .app-shell[data-collapsed='true'] & button span {
     opacity: 0;
+    inline-size: 0;
   }
 }
 
@@ -191,7 +206,7 @@ $header-height: 84px;
     padding: 1px 6px;
     border-radius: 5px;
     font: inherit;
-    font-size: 11px;
+    font-size: 12px;
     background: color-mix(in oklab, currentColor 12%, transparent);
   }
 
@@ -266,7 +281,7 @@ $header-height: 84px;
 
   h3 {
     margin: 8px 8px 4px;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: color-mix(in oklab, currentColor 50%, transparent);

@@ -73,12 +73,12 @@ function Section({ title, hint, items, onConnect }) {
               <button
                 type="button"
                 data-on={item.connected}
-                onClick={() => onConnect(`${item.name}: sign-in is not built yet`)}
+                onClick={() => onConnect(null)}
               >
                 {item.connected ? 'Disconnect' : 'Connect'}
               </button>
             ) : (
-              <button type="button" onClick={() => onConnect(`${item.name}: settings not built yet`)}>
+              <button type="button" onClick={() => onConnect(null)}>
                 Settings
               </button>
             )}

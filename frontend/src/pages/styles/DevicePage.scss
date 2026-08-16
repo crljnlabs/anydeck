@@ -75,7 +75,7 @@
 
   h3 {
     margin: 0 0 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: color-mix(in oklab, currentColor 55%, transparent);
   }
@@ -83,7 +83,7 @@
 
 .attributes-row {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: 104px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   padding: 3px 4px;
@@ -92,8 +92,8 @@
 
   > span { color: color-mix(in oklab, currentColor 65%, transparent); }
 
-  code { font-size: 11px; }
-  em { font-size: 11px; color: color-mix(in oklab, currentColor 50%, transparent); }
+  code { font-size: 12px; }
+  em { font-size: 12px; color: color-mix(in oklab, currentColor 50%, transparent); }
 
   input, select {
     inline-size: 100%;
@@ -136,14 +136,14 @@
   justify-content: space-between;
   margin-block-end: 8px;
 
-  h3 { margin: 0; font-size: 11px; font-weight: 700; color: color-mix(in oklab, currentColor 55%, transparent); }
+  h3 { margin: 0; font-size: 12px; font-weight: 700; color: color-mix(in oklab, currentColor 55%, transparent); }
 
   button {
     padding: 3px 9px;
     border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
     border-radius: 6px;
     font: inherit;
-    font-size: 11px;
+    font-size: 12px;
     color: inherit;
     background: transparent;
     cursor: pointer;
@@ -155,7 +155,7 @@
 .hook-trigger {
   padding: 1px 6px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--accent, #f97316);
@@ -175,6 +175,67 @@
   margin: auto 0 0;
   padding: 10px 12px;
   border-block-start: 1px solid color-mix(in oklab, currentColor 12%, transparent);
-  font-size: 11px;
+  font-size: 12px;
   color: color-mix(in oklab, currentColor 55%, transparent);
+}
+
+// Profiles sit above the board because they change what everything under them
+// means - editing the wrong one is the mistake this placement prevents.
+.profile-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in oklab, currentColor 16%, transparent);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+
+  &:hover { border-color: color-mix(in oklab, currentColor 32%, transparent); }
+
+  &[data-on='true'] {
+    border-color: color-mix(in oklab, var(--accent, #f97316) 70%, transparent);
+    background: color-mix(in oklab, var(--accent, #f97316) 14%, transparent);
+  }
+}
+
+.profile-number {
+  inline-size: 19px;
+  block-size: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: light-dark(#ffffff, #111318);
+  background: color-mix(in oklab, currentColor 45%, transparent);
+
+  .profile-chip[data-on='true'] & { background: var(--accent, #f97316); }
+}
+
+.profile-auto {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: color-mix(in oklab, currentColor 60%, transparent);
+  background: color-mix(in oklab, currentColor 12%, transparent);
+}
+
+// Dashed, because it makes something rather than selecting something.
+.profile-add {
+  border-style: dashed;
+  padding-inline: 14px;
+  font-size: 15px;
+  line-height: 1;
+  color: color-mix(in oklab, currentColor 60%, transparent);
 }

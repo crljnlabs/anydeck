@@ -3,7 +3,7 @@ import { useSettings } from '../contexts/settings'
 import { DeviceBoard, gridLayout } from '../components/DeviceBoard'
 import { ELEMENT_TYPES, ELEMENT_TYPE_LIST, elementType } from '../components/DeviceElement'
 import { BoltIcon, PencilIcon, TrashIcon } from '../components/RadialMenu'
-import { MOCK_ACTIONS, mockDevice } from '../lib/mock/devices'
+import { MOCK_ACTIONS, MOCK_INTEGRATIONS, mockDevice } from '../lib/mock/devices'
 import './styles/DevicePage.scss'
 
 /** The ring on an element. "Attributes" is the way into the panel on the right. */
@@ -16,13 +16,15 @@ const ELEMENT_MENU = [
 /**
  * One device, laid out and configurable.
  *
- * The panel on the right is the properties grid: whatever is selected, its
- * attributes are here. Nothing is saved - this is mock data, built to work out
- * what the database will have to hold.
+ * Profiles sit above everything else on this screen, because they change what
+ * every other control means: the same key has one action here and another
+ * there. Putting them anywhere but at the top would let someone edit the wrong
+ * profile without noticing.
  */
 export function DevicePage({ id, navigate }) {
   const { element: palette } = useSettings()
   const device = mockDevice(id)
+  const [profileId, setProfileId] = useState(device?.activeProfileId ?? null)
   const [selectedId, setSelectedId] = useState(device?.elements[0]?.id ?? null)
 
   const elements = useMemo(
@@ -67,34 +69,78 @@ export function DevicePage({ id, navigate }) {
           </p>
         </header>
 
+        <ProfileBar
+          profiles={device.profiles}
+          activeId={profileId}
+          onSelect={setProfileId}
+        />
+
         <DeviceBoard
           elements={elements}
           accent={palette.accent}
           housing={palette.housing}
           menu={ELEMENT_MENU}
+          onSelect={(chosen) => setSelectedId(chosen.key)}
           onMenuSelect={(_action, _item, chosen) => setSelectedId(chosen?.key ?? null)}
           cellSize={22}
         />
-
-        <p className="device-hint">
-          Click an element for its ring. Dragging elements around the grid is not
-          built yet.
-        </p>
       </div>
 
-      <AttributesPanel element={selected} onSelect={setSelectedId} device={device} />
+      <AttributesPanel
+        element={selected}
+        device={device}
+        profileId={profileId}
+        onSelect={setSelectedId}
+      />
     </div>
   )
 }
 
 /**
- * The properties panel, in the shape a properties grid has: rows of name and
- * value, grouped, with a description of whatever is focused at the bottom.
+ * The profile switcher.
  *
- * Actions sit in their own group because they are the one part that is a list
- * rather than a value - an element can have several, one per trigger.
+ * A new profile starts as a copy of the one showing, because that is what
+ * people are actually doing: taking a working layout and changing two keys. An
+ * empty profile would mean rebuilding everything to change one thing.
  */
-function AttributesPanel({ element, device, onSelect }) {
+function ProfileBar({ profiles, activeId, onSelect }) {
+  return (
+    <div className="profile-bar">
+      {profiles.map((profile, index) => (
+        <button
+          key={profile.id}
+          type="button"
+          className="profile-chip"
+          data-on={profile.id === activeId}
+          title={
+            profile.appliesTo
+              ? `Takes over while ${profile.appliesTo} is in front`
+              : profile.name
+          }
+          onClick={() => onSelect(profile.id)}
+        >
+          <span className="profile-number">{index + 1}</span>
+          <span className="profile-name">{profile.name}</span>
+          {profile.appliesTo ? <span className="profile-auto">auto</span> : null}
+        </button>
+      ))}
+
+      <button type="button" className="profile-chip profile-add" title="New profile, copied from this one">
+        +
+      </button>
+    </div>
+  )
+}
+
+/**
+ * The properties panel: rows of name and value, grouped, with a description of
+ * the selected element at the bottom.
+ *
+ * What it shows depends on what the element is. An input gets actions - one per
+ * trigger, within the current profile. An output gets the opposite: a rule for
+ * which state it should display, because nothing it does starts with the user.
+ */
+function AttributesPanel({ element, device, profileId, onSelect }) {
   if (!element) {
     return (
       <aside className="attributes-panel">
@@ -104,6 +150,8 @@ function AttributesPanel({ element, device, onSelect }) {
   }
 
   const type = elementType(element.typeId)
+  const hooks = (element.hooks ?? []).filter((hook) => hook.profileId === profileId)
+  const profile = device.profiles.find((item) => item.id === profileId)
 
   return (
     <aside className="attributes-panel">
@@ -122,11 +170,14 @@ function AttributesPanel({ element, device, onSelect }) {
       </div>
 
       <Group title="Design">
-        <Row label="Name" value={<input defaultValue={element.name} />} />
+        {/* Keyed by element: an uncontrolled field keeps its first value, so
+            without this the name of whatever was selected first would stay in
+            the box after selecting something else. */}
+        <Row label="Name" value={<input key={element.id} defaultValue={element.name} />} />
         <Row
           label="Element"
           value={
-            <select defaultValue={element.typeId}>
+            <select key={element.id} defaultValue={element.typeId}>
               {ELEMENT_TYPE_LIST.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
@@ -134,10 +185,15 @@ function AttributesPanel({ element, device, onSelect }) {
               ))}
             </select>
           }
-          hint="Change this when a part was recognised as the wrong kind."
         />
         <Row label="Position" value={<code>{element.cell.join(', ')}</code>} />
         <Row label="Rotation" value={<code>{element.rotation}°</code>} />
+        {element.resolution ? (
+          <Row
+            label="Resolution"
+            value={<code>{element.resolution.join(' × ')} px</code>}
+          />
+        ) : null}
       </Group>
 
       <Group title="Behaviour">
@@ -148,45 +204,77 @@ function AttributesPanel({ element, device, onSelect }) {
             type.triggers.length ? (
               <code>{type.triggers.join(', ')}</code>
             ) : (
-              <em>nothing — this one is driven by the PC</em>
+              <em>driven by the PC</em>
             )
           }
         />
       </Group>
 
-      <div className="attributes-actions">
-        <div className="attributes-actions-head">
-          <h3>Actions</h3>
-          <button type="button" disabled={!type.triggers.length}>
-            Add
-          </button>
-        </div>
-
-        {type.kind === 'output' ? (
-          <p className="attributes-note">
-            An output has no actions. It is told what to show — which state
-            drives it is the setting it will need instead.
-          </p>
-        ) : element.hooks.length === 0 ? (
-          <p className="attributes-note">Nothing hooked up yet.</p>
-        ) : (
-          <ul>
-            {element.hooks.map((hook) => (
-              <li key={hook.id}>
-                <span className="hook-trigger">{hook.trigger}</span>
-                <span className="hook-action">
-                  {MOCK_ACTIONS[hook.actionId]?.label ?? hook.actionId}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {type.kind === 'output' ? (
+        <Feedback element={element} />
+      ) : (
+        <Actions hooks={hooks} profile={profile} />
+      )}
 
       <p className="attributes-description">
         {ELEMENT_TYPES[element.typeId]?.description ?? ''}
       </p>
     </aside>
+  )
+}
+
+function Actions({ hooks, profile }) {
+  return (
+    <div className="attributes-actions">
+      <div className="attributes-actions-head">
+        <h3>Actions</h3>
+        <button type="button">Add</button>
+      </div>
+
+      {hooks.length === 0 ? (
+        <p className="attributes-note">
+          Nothing in {profile?.name ?? 'this profile'} yet.
+        </p>
+      ) : (
+        <ul>
+          {hooks.map((hook) => (
+            <li key={hook.id}>
+              <span className="hook-trigger">{hook.trigger}</span>
+              <span className="hook-action">
+                {MOCK_ACTIONS[hook.actionId]?.label ?? hook.actionId}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+/** An output runs backwards: the PC has the state, the element displays it. */
+function Feedback({ element }) {
+  const source = MOCK_INTEGRATIONS.find((item) => item.id === element.feedback?.source)
+
+  return (
+    <div className="attributes-actions">
+      <div className="attributes-actions-head">
+        <h3>Shows</h3>
+        <button type="button">Change</button>
+      </div>
+
+      {element.feedback ? (
+        <ul>
+          <li>
+            <span className="hook-trigger">when</span>
+            <span className="hook-action">
+              {source?.name ?? element.feedback.source} · {element.feedback.state}
+            </span>
+          </li>
+        </ul>
+      ) : (
+        <p className="attributes-note">Nothing assigned.</p>
+      )}
+    </div>
   )
 }
 
@@ -199,9 +287,9 @@ function Group({ title, children }) {
   )
 }
 
-function Row({ label, value, hint }) {
+function Row({ label, value }) {
   return (
-    <div className="attributes-row" title={hint}>
+    <div className="attributes-row">
       <span>{label}</span>
       <div>{value}</div>
     </div>
