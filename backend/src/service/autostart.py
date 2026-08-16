@@ -21,7 +21,11 @@ import sys
 from pathlib import Path
 
 APP_NAME = "anydeck"
-BUNDLE_ID = "ai.smao.anydeck"
+
+# Must match the bundle identifier in packaging/anydeck.spec. macOS keys the
+# login item by this string, so if the two ever drift the entry points at
+# something that is not the installed app.
+BUNDLE_ID = "com.crljnlabs.anydeck"
 
 
 def launch_command() -> list[str]:
@@ -32,9 +36,15 @@ def launch_command() -> list[str]:
     point has to be named as well - useful for testing the mechanism, though
     autostart really only makes sense once the app is installed.
     """
+    # --background: started at login it belongs in the menu bar, not in the
+    # user's face. Started by hand it opens the window instead.
     if getattr(sys, "frozen", False):
-        return [sys.executable]
-    return [sys.executable, str(Path(__file__).resolve().parents[1] / "main.py")]
+        return [sys.executable, "--background"]
+    return [
+        sys.executable,
+        str(Path(__file__).resolve().parents[1] / "main.py"),
+        "--background",
+    ]
 
 
 def is_supported() -> bool:

@@ -35,16 +35,28 @@ def database_path() -> Path:
     return data_dir() / "anydeck.sqlite3"
 
 
-def frontend_dir() -> Path | None:
-    """The built frontend, or None when it has not been built yet.
+def _resource_dir(bundled_name: str, repo_path: tuple[str, ...]) -> Path | None:
+    """A directory that sits somewhere else once the app is packaged.
 
-    Two locations, because the app runs in two shapes: from the repository
-    during development, and from a PyInstaller bundle once packaged, where the
-    build script drops the frontend next to the executable as `web/`.
+    The app runs in two shapes: from the repository during development, and
+    from a PyInstaller bundle, which unpacks its data next to the executable
+    under `sys._MEIPASS`.
     """
-    bundled = Path(getattr(sys, "_MEIPASS", "")) / "web" if hasattr(sys, "_MEIPASS") else None
-    if bundled and bundled.is_dir():
-        return bundled
+    root = getattr(sys, "_MEIPASS", None)
+    if root:
+        bundled = Path(root) / bundled_name
+        if bundled.is_dir():
+            return bundled
 
-    repo = Path(__file__).resolve().parents[3] / "frontend" / "dist"
+    repo = Path(__file__).resolve().parents[3].joinpath(*repo_path)
     return repo if repo.is_dir() else None
+
+
+def frontend_dir() -> Path | None:
+    """The built frontend, or None when it has not been built yet."""
+    return _resource_dir("web", ("frontend", "dist"))
+
+
+def icons_dir() -> Path | None:
+    """The application icons, used for the tray symbol and the window."""
+    return _resource_dir("icons", ("assets", "icons"))

@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from api import autostart as autostart_api
 from api import settings as settings_api
 from api import user as user_api
+from api import window as window_api
 from db.schema import migrate
 from service import user as user_service
 from utils.paths import frontend_dir
@@ -53,6 +54,7 @@ api = APIRouter(prefix="/api")
 api.include_router(autostart_api.router)
 api.include_router(settings_api.router)
 api.include_router(user_api.router)
+api.include_router(window_api.router)
 app.include_router(api)
 
 
