@@ -227,6 +227,10 @@ build/
 # Node
 node_modules/
 
+# The Python template above ignores lib/ (a distutils build directory), which
+# also swallows the frontend sources in frontend/src/lib. Take that one back.
+!frontend/src/lib/
+
 # Blender writes a backup of the previous save next to every .blend file.
 *.blend1
 
