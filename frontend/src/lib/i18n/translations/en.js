@@ -1,0 +1,28 @@
+/** English interface strings. The fallback language: a key missing from another
+ *  translation resolves here rather than showing the raw key to the user. */
+export default {
+  'app.name': 'nydeck',
+  'nav.home': 'Home',
+  'nav.devices': 'Devices',
+  'nav.actions': 'Action sources',
+  'nav.settings': 'Settings',
+  'nav.collapse': 'Collapse sidebar',
+  'nav.expand': 'Expand sidebar',
+  'search.placeholder': 'Search',
+  'search.empty': 'Search is not wired up yet',
+  'search.hint': 'Devices, elements and actions will show up here',
+  'settings.title': 'Settings',
+  'settings.appearance': 'Appearance',
+  'settings.theme': 'Theme',
+  'settings.theme.system': 'System',
+  'settings.theme.light': 'Light',
+  'settings.theme.dark': 'Dark',
+  'settings.accent': 'Accent',
+  'settings.system': 'System',
+  'settings.autostart': 'Start with the system',
+  'settings.autostartHint': 'Runs in the background after login',
+  'settings.language': 'Language',
+  'home.title': 'Home',
+  'home.hint': 'Scratch space for trying things out',
+  'user.signedInAs': 'Signed in as',
+}
