@@ -100,6 +100,31 @@ def install_signal_handlers() -> None:
     signal.signal(signal.SIGTERM, on_terminate)
 
 
+def check_port_is_free(port: int) -> None:
+    """Stop before starting if something else already has the backend port.
+
+    Left to itself uvicorn prints "Address already in use" and exits, which
+    says nothing about what is holding the port. The usual culprit is the
+    installed application: it runs in the background with only a tray icon, so
+    there is no window to notice and none to close - and it keeps its port
+    across days.
+    """
+    owner = common.port_owner(port)
+    if not owner:
+        return
+
+    pid, name = owner
+    common.warn(f"Port {port} is already taken by {name or 'another program'} (pid {pid}).")
+    if name and common.APP_NAME.lower() in name.lower():
+        print(
+            f"    That is {common.APP_NAME} itself, running in the background. Quit it from\n"
+            f"    the menu bar icon, or:  kill {pid}"
+        )
+    else:
+        print(f"    Stop it, or start on another port:  python3 scripts/dev.py --port {port + 1}")
+    sys.exit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the anydeck dev servers.")
     parser.add_argument("--app", action="store_true",
@@ -113,6 +138,7 @@ def main() -> None:
     processes: list = []
 
     if not args.frontend_only:
+        check_port_is_free(args.port)
         common.ensure_backend_deps()
         common.check_linux_gui_backend()
 

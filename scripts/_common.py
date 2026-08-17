@@ -234,6 +234,33 @@ def keep_out_of_spotlight(directory: Path) -> None:
     (directory / ".metadata_never_index").touch()
 
 
+def port_owner(port: int) -> tuple | None:
+    """Who is listening on a port, as (pid, program name).
+
+    "Address already in use" says a port is taken but not by what, and the
+    answer is usually the installed application sitting in the tray: it is a
+    background program by design, so nothing on screen suggests it is running
+    and there is no window to close. Naming it turns a puzzle into an
+    instruction.
+
+    Best effort - returns None when nothing is listening, and also when the
+    system offers no way to ask.
+    """
+    if not tool_available("lsof"):
+        return None
+    result = subprocess.run(
+        ["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-F", "pc"],
+        capture_output=True, text=True, check=False,
+    )
+    pid = name = None
+    for line in result.stdout.splitlines():
+        if line.startswith("p"):
+            pid = line[1:]
+        elif line.startswith("c"):
+            name = line[1:]
+    return (pid, name) if pid else None
+
+
 def clean_directory(path: Path) -> Path:
     if path.exists():
         shutil.rmtree(path)
