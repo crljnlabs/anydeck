@@ -17,13 +17,10 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from api import autostart as autostart_api
-from api import settings as settings_api
-from api import user as user_api
-from api import window as window_api
-from db.schema import migrate
-from service import user as user_service
-from utils.paths import frontend_dir
+from api import autostart_router, settings_router, user_router, window_router
+from db import migrate
+from service import ensure_current_user
+from utils import frontend_dir
 
 # The API must only be reachable from this machine - never bind to 0.0.0.0.
 HOST = "127.0.0.1"
@@ -37,7 +34,7 @@ async def lifespan(_: FastAPI):
     PRAGMA read, and a user who already has a row costs one SELECT.
     """
     migrate()
-    user_service.ensure_current_user()
+    ensure_current_user()
     yield
 
 
@@ -51,10 +48,10 @@ app = FastAPI(
 # The routing table lives here rather than inside the api package, so one file
 # answers "what does this backend expose".
 api = APIRouter(prefix="/api")
-api.include_router(autostart_api.router)
-api.include_router(settings_api.router)
-api.include_router(user_api.router)
-api.include_router(window_api.router)
+api.include_router(autostart_router)
+api.include_router(settings_router)
+api.include_router(user_router)
+api.include_router(window_router)
 app.include_router(api)
 
 

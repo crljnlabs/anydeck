@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from models.settings import Settings, SettingsUpdate
-from service import settings as settings_service
+from models import Settings, SettingsUpdate
+from service import get_settings, update_settings
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
 @router.get("", response_model=Settings)
 def read_settings() -> Settings:
-    return settings_service.get_settings()
+    return get_settings()
 
 
 @router.patch("", response_model=Settings)
 def write_settings(change: SettingsUpdate) -> Settings:
-    return settings_service.update_settings(change)
+    return update_settings(change)

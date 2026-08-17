@@ -13,18 +13,24 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from models import WindowState
+
 _show: Callable[[], None] | None = None
 
 
-def register(show: Callable[[], None]) -> None:
+def register_window(show: Callable[[], None]) -> None:
     global _show
     _show = show
 
 
-def show() -> bool:
-    """Ask for the window. False when nothing can answer - e.g. under uvicorn
-    alone during development, where there is no window at all."""
+def show_window() -> WindowState:
+    """Ask for the window.
+
+    Not shown when nothing can answer - during development the backend often
+    runs on its own, with the interface in a browser tab and no window process
+    anywhere. That is a normal state to report, not a failure.
+    """
     if _show is None:
-        return False
+        return WindowState(shown=False)
     _show()
-    return True
+    return WindowState(shown=True)

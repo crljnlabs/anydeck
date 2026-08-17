@@ -11,7 +11,7 @@ import os
 import sys
 
 from db import users as users_repository
-from models.user import User
+from models import User
 
 
 def current_user() -> User:

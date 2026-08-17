@@ -12,7 +12,7 @@ import os
 import subprocess
 
 from app import HOST, PORT
-from utils.launch import self_command
+from utils import self_command
 
 # Points at the frontend our own backend serves. During frontend development it
 # is set to the vite server instead, which is the only way to get hot reloading

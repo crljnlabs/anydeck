@@ -4,23 +4,17 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from models.autostart import Autostart, AutostartUpdate
-from service import autostart as autostart_service
+from models import Autostart, AutostartUpdate
+from service import get_autostart, set_autostart
 
 router = APIRouter(prefix="/autostart", tags=["autostart"])
 
 
 @router.get("", response_model=Autostart)
 def read_autostart() -> Autostart:
-    return Autostart(
-        enabled=autostart_service.is_enabled(),
-        supported=autostart_service.is_supported(),
-    )
+    return get_autostart()
 
 
 @router.put("", response_model=Autostart)
 def write_autostart(change: AutostartUpdate) -> Autostart:
-    return Autostart(
-        enabled=autostart_service.set_enabled(change.enabled),
-        supported=autostart_service.is_supported(),
-    )
+    return set_autostart(change)

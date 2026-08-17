@@ -32,8 +32,8 @@ import urllib.request
 
 from app import HOST, PORT
 from runtime import listener, server, tray, window
-from service import window as window_service
-from utils import logging as anydeck_logging
+from service import register_window
+from utils import setup_logging
 
 log = logging.getLogger("anydeck.main")
 
@@ -67,7 +67,7 @@ def run_background(*, open_window_now: bool) -> None:
     server.start()
 
     # Lets the API open the window - used when a second instance hands over.
-    window_service.register(window.open)
+    register_window(window.open)
 
     icon = tray.build(on_quit=lambda: icon.stop())
 
@@ -102,14 +102,14 @@ def main() -> None:
 
     if args.window:
         # A window and nothing else: no tray, no server, no listener.
-        anydeck_logging.setup("window")
+        setup_logging("window")
         from runtime import window_process
 
         window_process.run(args.window)
         log.info("window closed")
         return
 
-    anydeck_logging.setup("background")
+    setup_logging("background")
 
     if hand_over_to_running_instance():
         log.info("handed over to the instance already running")

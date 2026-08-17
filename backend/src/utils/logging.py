@@ -23,7 +23,7 @@ def log_path():
     return data_dir() / LOG_FILE
 
 
-def setup(role: str) -> None:
+def setup_logging(role: str) -> None:
     """Start logging for this process.
 
     `role` distinguishes the background process from a window process, since

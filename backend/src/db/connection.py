@@ -15,7 +15,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-from utils.paths import database_path
+from utils import database_path
 
 
 class Database:

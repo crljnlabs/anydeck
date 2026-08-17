@@ -15,8 +15,10 @@ from PIL import Image
 import pystray
 
 from runtime import window
-from service import autostart as autostart_service
-from utils.paths import icons_dir
+# The plain questions rather than the model-returning ones: a menu checkbox
+# needs a bool, not an Autostart. Both live in the same service.
+from service.autostart import is_enabled, is_supported, set_enabled
+from utils import icons_dir
 
 APP_NAME = "Anydeck"
 
@@ -49,7 +51,7 @@ def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
     }
 
     def toggle_autostart(_icon, item) -> None:
-        autostart_service.set_enabled(not item.checked)
+        set_enabled(not item.checked)
 
     menu_items = [
         pystray.MenuItem(text["open"], lambda: window.open(), default=True),
@@ -57,13 +59,13 @@ def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
     ]
 
     # Hidden where the platform cannot offer it, rather than shown and inert.
-    if autostart_service.is_supported():
+    if is_supported():
         menu_items += [
             pystray.MenuItem(
                 text["autostart"],
                 toggle_autostart,
                 # pystray requires a callable here; a plain bool raises.
-                checked=lambda _item: autostart_service.is_enabled(),
+                checked=lambda _item: is_enabled(),
             ),
             pystray.Menu.SEPARATOR,
         ]

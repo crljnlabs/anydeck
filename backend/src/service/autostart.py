@@ -20,7 +20,8 @@ import os
 import sys
 from pathlib import Path
 
-from utils.launch import self_command
+from models import Autostart, AutostartUpdate
+from utils import self_command
 
 APP_NAME = "anydeck"
 
@@ -37,6 +38,28 @@ def launch_command() -> list[str]:
     face. Started by hand it opens the window instead.
     """
     return self_command("--background")
+
+
+def get_autostart() -> Autostart:
+    """The setting as a whole, which is what a caller actually wants to know.
+
+    Assembling this belongs here rather than in the API: which questions make
+    up the answer is a decision about the setting, not about HTTP. An API
+    module that built it would have to be edited every time the setting gains
+    a field.
+    """
+    return Autostart(enabled=is_enabled(), supported=is_supported())
+
+
+def set_autostart(change: AutostartUpdate) -> Autostart:
+    """Apply a change and report the state actually reached.
+
+    Reached, not requested: switching it on can fail - an unsupported platform,
+    a directory that cannot be written - and the interface has to show what is
+    true rather than what was asked for.
+    """
+    set_enabled(change.enabled)
+    return get_autostart()
 
 
 def is_supported() -> bool:

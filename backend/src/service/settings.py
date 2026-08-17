@@ -9,7 +9,7 @@ a value written by an older version cannot crash the interface.
 from __future__ import annotations
 
 from db import users as users_repository
-from models.settings import Settings, SettingsUpdate
+from models import Settings, SettingsUpdate
 from service.user import ensure_current_user
 
 
