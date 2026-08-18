@@ -11,28 +11,52 @@ from __future__ import annotations
 from db import users as users_repository
 from models import Settings, SettingsUpdate
 from service.user import ensure_current_user
+from utils import Tracking
 
 
-def get_settings() -> Settings:
-    stored = users_repository.get_settings(ensure_current_user())
+def get_settings(tracking: Tracking) -> Settings:
+    with tracking.step("get-settings"):
+        stored = users_repository.get_settings(ensure_current_user(tracking))
 
-    # Defaults come from the model, and anything unrecognised is dropped: a key
-    # left over from an older version, or a value that is no longer valid,
-    # should fall back rather than take the settings screen down.
-    known = {
-        name: value for name, value in stored.items() if name in Settings.model_fields
-    }
-    try:
-        return Settings(**known)
-    except ValueError:
-        return Settings()
+        # Defaults come from the model, and anything unrecognised is dropped: a
+        # key left over from an older version, or a value that is no longer
+        # valid, should fall back rather than take the settings screen down.
+        known = {
+            name: value
+            for name, value in stored.items()
+            if name in Settings.model_fields
+        }
+
+        dropped = sorted(set(stored) - set(known))
+        if dropped:
+            tracking.note(
+                "dropped stored settings this version does not know",
+                values={"names": dropped},
+            )
+
+        try:
+            return Settings(**known)
+        except ValueError as error:
+            # One unusable value means the whole record falls back, so this is
+            # worth a warning: the user sees defaults where they set something.
+            tracking.note(
+                f"stored settings could not be read, using defaults: {error}",
+                level="warning",
+                values={"stored": known},
+            )
+            return Settings()
 
 
-def update_settings(change: SettingsUpdate) -> Settings:
+def update_settings(tracking: Tracking, change: SettingsUpdate) -> Settings:
     """Apply only the fields that were sent, leave the rest alone."""
-    values = change.model_dump(exclude_none=True)
-    if values:
-        users_repository.set_settings(
-            ensure_current_user(), {name: str(value) for name, value in values.items()}
-        )
-    return get_settings()
+    with tracking.step("update-settings"):
+        values = change.model_dump(exclude_none=True)
+        if values:
+            users_repository.set_settings(
+                ensure_current_user(tracking),
+                {name: str(value) for name, value in values.items()},
+            )
+            tracking.track(
+                "settings.updated", {"names": sorted(values)}, level="success"
+            )
+        return get_settings(tracking)

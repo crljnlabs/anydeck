@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from models import WindowState
+from utils import Tracking
 
 _show: Callable[[], None] | None = None
 
@@ -23,14 +24,18 @@ def register_window(show: Callable[[], None]) -> None:
     _show = show
 
 
-def show_window() -> WindowState:
+def show_window(tracking: Tracking) -> WindowState:
     """Ask for the window.
 
     Not shown when nothing can answer - during development the backend often
     runs on its own, with the interface in a browser tab and no window process
     anywhere. That is a normal state to report, not a failure.
     """
-    if _show is None:
-        return WindowState(shown=False)
-    _show()
-    return WindowState(shown=True)
+    with tracking.step("show-window"):
+        if _show is None:
+            tracking.note("no window to show: nothing registered a way to open one")
+            return WindowState(shown=False)
+
+        _show()
+        tracking.track("window.shown", level="success")
+        return WindowState(shown=True)

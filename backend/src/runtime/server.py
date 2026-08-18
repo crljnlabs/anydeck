@@ -12,6 +12,7 @@ import threading
 import time
 
 from app import HOST, PORT, app
+from utils import AnydeckError, Tracking
 
 _server = None
 _thread: threading.Thread | None = None
@@ -28,7 +29,7 @@ def is_running(host: str = HOST, port: int = PORT, timeout: float = 0.25) -> boo
         return probe.connect_ex((host, port)) == 0
 
 
-def start() -> threading.Thread:
+def start(tracking: Tracking) -> threading.Thread:
     """Start serving, and return once the port actually answers.
 
     Waiting matters: the window loads its page from this server, and a window
@@ -48,10 +49,15 @@ def start() -> threading.Thread:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         if is_running():
+            tracking.note("server listening", values={"host": HOST, "port": PORT})
             return _thread
         time.sleep(0.05)
 
-    raise RuntimeError(f"The server did not come up on {HOST}:{PORT}")
+    raise AnydeckError(
+        tracking,
+        f"the server did not come up on {HOST}:{PORT} within 10 seconds",
+        user_message="Anydeck could not start its local server.",
+    )
 
 
 def stop() -> None:

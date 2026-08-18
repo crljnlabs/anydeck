@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 from models import Autostart, AutostartUpdate
-from utils import self_command
+from utils import Tracking, self_command
 
 APP_NAME = "anydeck"
 
@@ -40,7 +40,7 @@ def launch_command() -> list[str]:
     return self_command("--background")
 
 
-def get_autostart() -> Autostart:
+def get_autostart(tracking: Tracking) -> Autostart:
     """The setting as a whole, which is what a caller actually wants to know.
 
     Assembling this belongs here rather than in the API: which questions make
@@ -51,15 +51,30 @@ def get_autostart() -> Autostart:
     return Autostart(enabled=is_enabled(), supported=is_supported())
 
 
-def set_autostart(change: AutostartUpdate) -> Autostart:
+def set_autostart(tracking: Tracking, change: AutostartUpdate) -> Autostart:
     """Apply a change and report the state actually reached.
 
     Reached, not requested: switching it on can fail - an unsupported platform,
     a directory that cannot be written - and the interface has to show what is
     true rather than what was asked for.
     """
-    set_enabled(change.enabled)
-    return get_autostart()
+    with tracking.step("set-autostart"):
+        reached = set_enabled(tracking, change.enabled)
+
+        # The interesting case: the interface will show a switch that did not
+        # move, and without this there would be nothing to explain why.
+        if reached != change.enabled:
+            tracking.note(
+                "autostart did not reach the requested state",
+                level="warning",
+                values={"requested": change.enabled, "reached": reached},
+            )
+        else:
+            tracking.track(
+                "autostart.updated", {"enabled": reached}, level="success"
+            )
+
+        return get_autostart(tracking)
 
 
 def is_supported() -> bool:
@@ -74,17 +89,32 @@ def is_enabled() -> bool:
     return _desktop_path().exists()
 
 
-def set_enabled(enabled: bool) -> bool:
+def set_enabled(tracking: Tracking, enabled: bool) -> bool:
     """Turn autostart on or off. Returns the state actually reached."""
     if not is_supported():
+        tracking.note(
+            f"autostart is not supported on {sys.platform}",
+            level="warning",
+        )
         return False
 
-    if sys.platform == "darwin":
-        _set_macos(enabled)
-    elif sys.platform == "win32":
-        _set_windows(enabled)
-    else:
-        _set_linux(enabled)
+    try:
+        if sys.platform == "darwin":
+            _set_macos(enabled)
+        elif sys.platform == "win32":
+            _set_windows(tracking, enabled)
+        else:
+            _set_linux(enabled)
+    except OSError as error:
+        # Every platform writes a file or a registry value the user owns, and any
+        # of them can refuse. Reported rather than raised, because this function
+        # promises the state reached - and "unchanged" is a truthful answer that
+        # the settings screen can render. The reason lands in the log file.
+        tracking.note(
+            f"could not write the autostart entry: {error}",
+            level="warning",
+            values={"requested": enabled},
+        )
 
     return is_enabled()
 
@@ -141,7 +171,7 @@ def _windows_value() -> str | None:
         return None
 
 
-def _set_windows(enabled: bool) -> None:
+def _set_windows(tracking: Tracking, enabled: bool) -> None:
     import winreg
 
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _RUN_KEY) as key:
@@ -151,8 +181,11 @@ def _set_windows(enabled: bool) -> None:
         else:
             try:
                 winreg.DeleteValue(key, APP_NAME)
-            except OSError:
-                pass
+            except OSError as error:
+                # Almost always "there was no value to delete", which is the
+                # requested state already. Noted, not raised - but noted, because
+                # the other reading is a permission problem.
+                tracking.note(f"no autostart value to remove: {error}")
 
 
 # --- Linux ------------------------------------------------------------------

@@ -33,7 +33,7 @@ import urllib.request
 from app import HOST, PORT
 from runtime import listener, server, tray, window
 from service import register_window
-from utils import setup_logging
+from utils import AnydeckError, Tracking, setup_logging, write_tracking
 
 log = logging.getLogger("anydeck.main")
 
@@ -47,43 +47,68 @@ def hand_over_to_running_instance() -> bool:
     if not server.is_running():
         return False
 
+    tracking = Tracking()
     try:
-        request = urllib.request.Request(
-            f"http://{HOST}:{PORT}/api/window/show", method="POST"
-        )
-        urllib.request.urlopen(request, timeout=5).close()
-    except (urllib.error.URLError, OSError):
-        # Something is on the port but it is not us, or it is not answering.
-        # Carrying on would fail at bind time with a far less clear message.
-        print(f"error: port {PORT} is in use by something else", file=sys.stderr)
-        raise SystemExit(1) from None
+        with tracking.step("hand-over"):
+            try:
+                request = urllib.request.Request(
+                    f"http://{HOST}:{PORT}/api/window/show", method="POST"
+                )
+                urllib.request.urlopen(request, timeout=5).close()
+            except (urllib.error.URLError, OSError) as error:
+                # Something is on the port but it is not us, or it is not
+                # answering. Carrying on would fail at bind time with a far less
+                # clear message.
+                raise AnydeckError(
+                    tracking,
+                    f"port {PORT} answered but not as anydeck: {error}",
+                    user_message=f"Port {PORT} is in use by another program.",
+                    inner_error=error,
+                ) from error
 
-    return True
+            tracking.note("handed over to the instance already running")
+            return True
+    finally:
+        write_tracking(tracking)
 
 
 def run_background(*, open_window_now: bool) -> None:
-    log.info("background starting")
-    listener.start()
-    server.start()
+    startup = Tracking()
+    try:
+        with startup.step("startup"):
+            log.info("background starting")
+            listener.start(startup)
+            server.start(startup)
 
-    # Lets the API open the window - used when a second instance hands over.
-    register_window(window.open)
+            # Lets the API open the window - used when a second instance hands over.
+            register_window(window.open)
 
-    icon = tray.build(on_quit=lambda: icon.stop())
+            icon = tray.build(startup, on_quit=lambda: icon.stop())
 
-    if open_window_now:
-        window.open()
+            if open_window_now:
+                window.open()
+    finally:
+        # Written here rather than once the program ends: the tray is about to
+        # take the main thread for as long as anydeck runs, and a startup problem
+        # has to be readable now, not after the user finally quits.
+        write_tracking(startup)
 
     try:
         # Owns the main thread until the tray is stopped.
         tray.run(icon)
     finally:
         # After the loop has ended, so this runs on the main thread with nothing
-        # else competing for it.
-        log.info("shutting down")
-        window.close()
-        listener.stop()
-        server.stop()
+        # else competing for it. Its own timeline: shutting down is a different
+        # operation from starting up, and by now the startup one is long written.
+        shutdown = Tracking()
+        try:
+            with shutdown.step("shutdown"):
+                log.info("shutting down")
+                window.close()
+                listener.stop()
+                server.stop()
+        finally:
+            write_tracking(shutdown)
 
 
 def main() -> None:
@@ -111,11 +136,16 @@ def main() -> None:
 
     setup_logging("background")
 
-    if hand_over_to_running_instance():
-        log.info("handed over to the instance already running")
-        return
-
-    run_background(open_window_now=not args.background)
+    try:
+        if hand_over_to_running_instance():
+            return
+        run_background(open_window_now=not args.background)
+    except AnydeckError as error:
+        # Caught rather than allowed to reach the console: a traceback for "the
+        # port is in use" tells the user nothing they can act on, and the whole
+        # technical account is in the log file already.
+        print(f"error: {error.user_message}", file=sys.stderr)
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":

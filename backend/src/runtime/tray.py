@@ -18,7 +18,7 @@ from runtime import window
 # The plain questions rather than the model-returning ones: a menu checkbox
 # needs a bool, not an Autostart. Both live in the same service.
 from service.autostart import is_enabled, is_supported, set_enabled
-from utils import icons_dir
+from utils import AnydeckError, Tracking, icons_dir, write_tracking
 
 APP_NAME = "Anydeck"
 
@@ -27,21 +27,29 @@ APP_NAME = "Anydeck"
 ICON_FILE = "anydeck-64.png"
 
 
-def _icon_image() -> Image.Image:
+def _icon_image(tracking: Tracking) -> Image.Image:
     directory = icons_dir()
     if directory is None:
-        raise FileNotFoundError(
-            "Application icons not found. Generate them with scripts/icons.py."
+        raise AnydeckError(
+            tracking,
+            "no icon directory found; generate one with scripts/icons.py",
+            user_message="Anydeck cannot find its application icons.",
         )
     return Image.open(directory / ICON_FILE)
 
 
-def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
+def build(
+    tracking: Tracking, on_quit, *, labels: dict[str, str] | None = None
+) -> pystray.Icon:
     """Create the tray icon. Running it is the caller's job - see `run` below.
 
     Every callback here runs on the loop's own thread, so none of them may do
     real work: a slow callback freezes the menu. Opening the window is only a
     process start, and the expensive part happens inside that process.
+
+    `tracking` covers building the icon, not using it. A menu click happens long
+    after this returns and is its own entry point, so it opens its own timeline -
+    see `toggle_autostart`.
     """
     text = {
         "open": "Open window",
@@ -51,7 +59,14 @@ def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
     }
 
     def toggle_autostart(_icon, item) -> None:
-        set_enabled(not item.checked)
+        # A click is its own operation: this runs whenever the user opens the
+        # menu, which is nothing to do with the startup that built the icon.
+        click = Tracking()
+        try:
+            with click.step("toggle-autostart"):
+                set_enabled(click, not item.checked)
+        finally:
+            write_tracking(click)
 
     menu_items = [
         pystray.MenuItem(text["open"], lambda: window.open(), default=True),
@@ -74,7 +89,7 @@ def build(on_quit, *, labels: dict[str, str] | None = None) -> pystray.Icon:
 
     return pystray.Icon(
         APP_NAME,
-        _icon_image(),
+        _icon_image(tracking),
         APP_NAME,
         menu=pystray.Menu(*menu_items),
     )

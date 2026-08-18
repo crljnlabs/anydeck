@@ -13,14 +13,14 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api import autostart_router, settings_router, user_router, window_router
 from db import migrate
 from service import ensure_current_user
-from utils import frontend_dir
+from utils import AnydeckError, Tracking, frontend_dir, write_tracking
 
 # The API must only be reachable from this machine - never bind to 0.0.0.0.
 HOST = "127.0.0.1"
@@ -32,9 +32,31 @@ async def lifespan(_: FastAPI):
 
     Both steps are cheap and idempotent: an up-to-date database costs one
     PRAGMA read, and a user who already has a row costs one SELECT.
+
+    Its own timeline, written before the first request: this happens once and
+    outside any request, so there is no route's timeline for it to belong to.
     """
-    migrate()
-    ensure_current_user()
+    tracking = Tracking()
+    try:
+        with tracking.step("start-storage"):
+            try:
+                version = migrate()
+            except Exception as error:
+                # Nothing works without storage, so this is fatal - but it is
+                # worth saying which part failed rather than letting a bare
+                # sqlite3 error reach the console.
+                raise AnydeckError(
+                    tracking,
+                    f"the database could not be brought up to date: {error}",
+                    user_message="Anydeck could not open its database.",
+                    inner_error=error,
+                ) from error
+
+            tracking.note("storage ready", values={"schema_version": version})
+            ensure_current_user(tracking)
+    finally:
+        write_tracking(tracking)
+
     yield
 
 
@@ -44,6 +66,27 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
+
+@app.exception_handler(AnydeckError)
+async def handle_anydeck_error(request: Request, error: AnydeckError) -> JSONResponse:
+    """Turn a failure into an answer the interface can show.
+
+    Deliberately thin. The technical message and the whole timeline are already
+    in the log file by the time this runs - the route's timeline is written as
+    the request unwinds - so this only has to carry the sentence meant for the
+    user, plus the translation key when there is one.
+
+    One status for everything, because nothing classifies failures yet. When it
+    does, this is the single place that has to learn the mapping; and when the
+    interface starts reading the timeline, `request.state.tracking` is where the
+    dependency left it.
+    """
+    body: dict[str, object] = {"detail": error.user_message}
+    if error.i18n is not None:
+        i18n = error.i18n
+        body["i18n"] = {"key": i18n} if isinstance(i18n, str) else i18n
+    return JSONResponse(status_code=500, content=body)
+
 
 # The routing table lives here rather than inside the api package, so one file
 # answers "what does this backend expose".
