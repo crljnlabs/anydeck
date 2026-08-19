@@ -9,6 +9,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // The ngrok tunnel reaches the dev server under a public hostname, which
+    // Vite rejects unless it is listed here. The leading dot matches every
+    // subdomain, so a restarted tunnel keeps working.
+    allowedHosts: ['.ngrok-free.app'],
     // In development the frontend runs on its own port. Proxying /api to the
     // backend keeps every request same-origin, so no CORS handling is needed.
     proxy: {

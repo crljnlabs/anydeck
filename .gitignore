@@ -231,6 +231,13 @@ node_modules/
 # also swallows the frontend sources in frontend/src/lib. Take that one back.
 !frontend/src/lib/
 
+# And again for *.spec. The template assumes a PyInstaller spec is generated
+# scratch - the comment up at that rule says so - but ours is a hand-written
+# build input: scripts/build.py hands packaging/anydeck.spec to PyInstaller and
+# fails without it. Named exactly, so a spec that pyi-makespec drops somewhere
+# else stays ignored.
+!packaging/anydeck.spec
+
 # Blender writes a backup of the previous save next to every .blend file.
 *.blend1
 
