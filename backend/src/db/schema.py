@@ -37,6 +37,40 @@ MIGRATIONS: list[str] = [
         PRIMARY KEY (user_id, name)
     );
     """,
+    # 2: stored credentials.
+    """
+    -- One row per id, because the id IS the link between the two halves. As a
+    -- primary key of one shared row that link is a guarantee of the database;
+    -- spread over two tables it would be a join every caller has to get right,
+    -- plus the possibility of one half existing without the other. A single
+    -- upsert also writes both halves at once, so a half-updated record cannot
+    -- be produced.
+    CREATE TABLE secrets (
+        -- Chosen by the caller ("spotify", "hue-bridge"), not generated, because
+        -- the caller has to be able to find its own record again.
+        id           TEXT PRIMARY KEY,
+
+        -- The readable half, as a JSON object. Not name/value rows like
+        -- `settings`: that table has a fixed vocabulary whose entries are read
+        -- one at a time, while this is a differently shaped dict per id that is
+        -- only ever read whole. JSON also keeps types - an expiry stays a
+        -- number - which the TEXT column of `settings` cannot.
+        plain        TEXT NOT NULL DEFAULT '{}',
+
+        -- The confidential half: nonce + ciphertext + tag, AES-256-GCM. One
+        -- blob for the whole dict rather than one per field, because per-field
+        -- would publish the field names and how many there are - the very
+        -- metadata that says what is being kept. NULL when there is nothing
+        -- confidential to keep.
+        encrypted    BLOB,
+
+        -- Which key sealed this row. Without it, "the key in the keychain was
+        -- replaced" and "these bytes are damaged" are the same failed tag check.
+        key_version  INTEGER NOT NULL DEFAULT 1,
+
+        updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    """,
 ]
 
 

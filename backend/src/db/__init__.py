@@ -9,7 +9,7 @@ they all answer the same few verbs. `users.get_settings` says whose settings;
 a bare `get_settings` next to the service's own would not.
 """
 
-from db import users
+from db import secrets, users
 from db.connection import Database, database
 from db.schema import current_version, migrate
 
@@ -18,5 +18,6 @@ __all__ = [
     "current_version",
     "database",
     "migrate",
+    "secrets",
     "users",
 ]

@@ -12,7 +12,7 @@ a device event and the startup sequence all record the same way.
 Anything that decides what anydeck should *do* belongs in `service`.
 """
 
-from utils.error import AnydeckError
+from utils.error import AnydeckError, DecryptionError, SecretsError
 from utils.launch import self_command
 from utils.logging import log_path, setup_logging
 from utils.paths import data_dir, database_path, frontend_dir, icons_dir
@@ -20,6 +20,8 @@ from utils.tracking import Tracker, Tracking, carry_context, write_tracking
 
 __all__ = [
     "AnydeckError",
+    "DecryptionError",
+    "SecretsError",
     "Tracker",
     "Tracking",
     "carry_context",

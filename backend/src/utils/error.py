@@ -101,3 +101,29 @@ def _where(tracker: Tracker | None) -> str:
         labels.extend(str(part) for part in getattr(step, "path", []) or [])
 
     return " > ".join(labels)
+
+
+class SecretsError(AnydeckError):
+    """A stored credential could not be written or read.
+
+    The one exception to the note above, and only because the caller has a
+    decision to make that no message can make for it: a failure in here means
+    either the credential store is unreachable or the value in the database is
+    no longer readable, and both of those end in "ask the user to connect this
+    account again" rather than in a retry. Nothing else in the backend has that
+    shape yet.
+
+    Still an AnydeckError, so the handler in app.py and every `except
+    AnydeckError` keep working untouched.
+    """
+
+
+class DecryptionError(SecretsError):
+    """A stored secret did not decrypt.
+
+    Separate from its parent because it is the case that must never be
+    recovered from quietly. The value was written by this program and cannot be
+    read back: the key is gone, the row was tampered with, or it belongs to a
+    different id. Returning anything at all here would be returning data the
+    user never stored.
+    """

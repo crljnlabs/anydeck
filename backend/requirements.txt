@@ -32,3 +32,23 @@ pillow==12.3.0
 
 # The action mapping is stored in SQLite through the sqlite3 module of the
 # Python standard library, so it needs no separate dependency.
+
+# Stored credentials: the key lives in the operating system's own credential
+# store (macOS Keychain, Windows Credential Manager, Linux SecretService), never
+# in the database next to the data it protects.
+#
+# On Linux this needs a running secret service - gnome-keyring or KWallet over
+# D-Bus. There is none on a bare window manager or over SSH, and utils/crypto.py
+# says so rather than failing at the first decrypt.
+#
+# PACKAGING: keyring finds its backends through entry points, which PyInstaller
+# does not follow. packaging/anydeck.spec must collect them explicitly:
+#   from PyInstaller.utils.hooks import collect_all
+#   datas, binaries, hiddenimports = collect_all("keyring")
+# Without it the bundled app starts fine and fails the moment a secret is saved.
+keyring==25.7.0
+
+# AES-256-GCM for the encrypted half of a secrets row. Authenticated, so a
+# tampered or truncated value fails loudly instead of decrypting to garbage.
+# The standard library has no AES at all, hence a dependency rather than hashlib.
+cryptography==50.0.0

@@ -5,3 +5,7 @@
 
 # Bundles backend + frontend into a standalone application.
 pyinstaller==6.22.0
+
+# Tests. Run from this directory:
+#   .venv/bin/python -m pytest
+pytest==9.1.1
